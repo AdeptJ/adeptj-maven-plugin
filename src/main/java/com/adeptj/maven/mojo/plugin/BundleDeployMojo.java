@@ -72,6 +72,8 @@ public class BundleDeployMojo extends AbstractMojo {
 
     private static final String WEB_CONSOLE_URL = "http://localhost:9007/system/console";
 
+    private static final String HEADER_SET_COOKIE = "Set-Cookie";
+
     @Parameter(property = "adeptj.file", defaultValue = "${project.build.directory}/${project.build.finalName}.jar", required = true)
     private String bundleFileName;
 
@@ -112,7 +114,7 @@ public class BundleDeployMojo extends AbstractMojo {
             String sessionId = this.authenticate(httpClient);
             if (sessionId == null) {
                 // Means authentication was not successful.
-                this.getLog().warn("Authentication failed!!");
+                this.getLog().error("Authentication failed, please check credentials!!");
                 return;
             }
             CloseableHttpResponse bundleDeployResponse = httpClient.execute(this.bundleDeployRequest(bundle, sessionId));
@@ -120,7 +122,7 @@ public class BundleDeployMojo extends AbstractMojo {
             if (statusCode == SC_OK || statusCode == SC_MOVED_TEMPORARILY) {
                 log.info("Bundle deployed successfully, please check AdeptJ OSGi Web Console!!");
             } else {
-                log.info("Seems a problem while deploying bundle, please check AdeptJ OSGi Web Console!!");
+                log.warn("Seems a problem while deploying bundle, please check AdeptJ OSGi Web Console!!");
             }
             IOUtils.closeQuietly(bundleDeployResponse);
         } catch (Exception ex) {
@@ -146,18 +148,14 @@ public class BundleDeployMojo extends AbstractMojo {
 
     private String authenticate(CloseableHttpClient httpClient) throws IOException {
         List<NameValuePair> authForm = new ArrayList<>();
-        this.getLog().info("User: " + this.user);
         authForm.add(new BasicNameValuePair(J_USERNAME, this.user));
         authForm.add(new BasicNameValuePair(J_PASSWORD, this.password));
         UrlEncodedFormEntity entity = new UrlEncodedFormEntity(authForm, Consts.UTF_8);
-        HttpUriRequest authRequest = RequestBuilder
+        CloseableHttpResponse authResponse = httpClient.execute(RequestBuilder
                 .post(this.authUrl)
                 .setEntity(entity)
-                .build();
-        CloseableHttpResponse authResponse = httpClient.execute(authRequest);
+                .build());
         String sessionId = this.getSessionId(authResponse);
-        //this.getLog().info("Session ID: " + sessionId);
-        //this.getLog().info("AuthStatus: " + authResponse.getStatusLine().getStatusCode());
         IOUtils.closeQuietly(authResponse);
         return sessionId;
     }
@@ -175,13 +173,22 @@ public class BundleDeployMojo extends AbstractMojo {
     }
 
     private String getSessionId(CloseableHttpResponse authResponse) {
+        String sessionId = null;
         for (Header header : authResponse.getAllHeaders()) {
-            //log.info("Header: " + header.getValue());
-            if (HEADER_JSESSIONID.equals(header.getName())) {
-                return header.getValue();
+            String headerName = header.getName();
+            if (HEADER_SET_COOKIE.equals(headerName)) {
+                for (String part : header.getValue().split(";")) {
+                    if (part.startsWith(HEADER_JSESSIONID)) {
+                        sessionId = part.split("=")[1];
+                        break;
+                    }
+                }
+            } else if (HEADER_JSESSIONID.equals(headerName)) {
+                sessionId = header.getValue();
+                break;
             }
         }
-        return null;
+        return sessionId;
     }
 
     private CloseableHttpClient getHttpClient() {
