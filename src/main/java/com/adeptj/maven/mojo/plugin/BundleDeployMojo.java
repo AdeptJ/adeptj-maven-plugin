@@ -101,44 +101,11 @@ public class BundleDeployMojo extends AbstractMojo {
     public void execute() throws MojoExecutionException, MojoFailureException {
         Log log = getLog();
         File bundle = new File(this.bundleFileName);
-        try {
-            Attributes mainAttributes = new JarFile(bundle).getManifest().getMainAttributes();
-            String bundleName = mainAttributes.getValue("Bundle-Name");
-            String bsn = mainAttributes.getValue("Bundle-SymbolicName");
-            String bundleVersion = mainAttributes.getValue("Bundle-Version");
-            log.info("Deploying Bundle => " + bundleName + "    (" + bsn + "), version: " + bundleVersion);
-        } catch (IOException ex) {
-            log.error(ex);
-        }
-        try (CloseableHttpClient httpClient = getHttpClient();) {
-            // First Authenticate
-            List<NameValuePair> authForm = new ArrayList<>();
-            authForm.add(new BasicNameValuePair(J_USERNAME, this.user));
-            authForm.add(new BasicNameValuePair(J_PASSWORD, this.password));
-            UrlEncodedFormEntity entity = new UrlEncodedFormEntity(authForm, Consts.UTF_8);
-            HttpUriRequest authRequest = RequestBuilder
-                    .post(AUTH_URL)
-                    .setEntity(entity)
-                    .build();
-            CloseableHttpResponse authResponse = httpClient.execute(authRequest);
-            String sessionId = this.getSessionId(authResponse);
-            IOUtils.closeQuietly(authResponse);
-
-            // Now deploy bundle and pass the JSESSIONID received as a header in Auth call above.
-            HttpUriRequest bundleInstallRequest = RequestBuilder
-                    .post(this.consoleUrl + "/bundles")
-                    .addHeader(HEADER_JSESSIONID, sessionId)
-                    .setEntity(MultipartEntityBuilder.create()
-                            .setMode(HttpMultipartMode.BROWSER_COMPATIBLE)
-                            .addBinaryBody("bundlefile", bundle)
-                            .addTextBody("action", "install")
-                            .addTextBody("_noredir_", "_noredir_")
-                            .addTextBody("bundlestartlevel", this.bundleStartLevel)
-                            .addTextBody("refreshPackages", "true")
-                            .addTextBody("bundlestart", "true")
-                            .build())
-                    .build();
-            CloseableHttpResponse bundleInstallResponse = httpClient.execute(bundleInstallRequest);
+        this.logBundleInfo(log, bundle);
+        try (CloseableHttpClient httpClient = this.getHttpClient()) {
+            // First Authenticate and then deploy bundle and pass the JSESSIONID received as a header in Auth call above.
+            CloseableHttpResponse bundleInstallResponse = httpClient.execute(this.bundleDeployRequest(bundle,
+                    this.authenticate(httpClient)));
             int statusCode = bundleInstallResponse.getStatusLine().getStatusCode();
             if (statusCode == SC_OK || statusCode == SC_MOVED_TEMPORARILY) {
                 log.info("Bundle deployed successfully, please check AdeptJ OSGi Web Console!!");
@@ -148,6 +115,49 @@ public class BundleDeployMojo extends AbstractMojo {
             IOUtils.closeQuietly(bundleInstallResponse);
         } catch (Exception ex) {
             throw new MojoExecutionException("Installation on " + this.consoleUrl + " failed, cause: " + ex.getMessage(), ex);
+        }
+    }
+
+    private HttpUriRequest bundleDeployRequest(File bundle, String sessionId) {
+        return RequestBuilder
+                        .post(this.consoleUrl + "/bundles")
+                        .addHeader(HEADER_JSESSIONID, sessionId)
+                        .setEntity(MultipartEntityBuilder.create()
+                                .setMode(HttpMultipartMode.BROWSER_COMPATIBLE)
+                                .addBinaryBody("bundlefile", bundle)
+                                .addTextBody("action", "install")
+                                .addTextBody("_noredir_", "_noredir_")
+                                .addTextBody("bundlestartlevel", this.bundleStartLevel)
+                                .addTextBody("refreshPackages", "true")
+                                .addTextBody("bundlestart", "true")
+                                .build())
+                        .build();
+    }
+
+    private String authenticate(CloseableHttpClient httpClient) throws IOException {
+        List<NameValuePair> authForm = new ArrayList<>();
+        authForm.add(new BasicNameValuePair(J_USERNAME, this.user));
+        authForm.add(new BasicNameValuePair(J_PASSWORD, this.password));
+        UrlEncodedFormEntity entity = new UrlEncodedFormEntity(authForm, Consts.UTF_8);
+        HttpUriRequest authRequest = RequestBuilder
+                .post(AUTH_URL)
+                .setEntity(entity)
+                .build();
+        CloseableHttpResponse authResponse = httpClient.execute(authRequest);
+        String sessionId = this.getSessionId(authResponse);
+        IOUtils.closeQuietly(authResponse);
+        return sessionId;
+    }
+
+    private void logBundleInfo(Log log, File bundle) {
+        try {
+            Attributes mainAttributes = new JarFile(bundle).getManifest().getMainAttributes();
+            String bundleName = mainAttributes.getValue("Bundle-Name");
+            String bsn = mainAttributes.getValue("Bundle-SymbolicName");
+            String bundleVersion = mainAttributes.getValue("Bundle-Version");
+            log.info("Deploying Bundle => " + bundleName + "    (" + bsn + "), version: " + bundleVersion);
+        } catch (IOException ex) {
+            log.error(ex);
         }
     }
 
