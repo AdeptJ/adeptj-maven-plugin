@@ -70,11 +70,16 @@ public class BundleDeployMojo extends AbstractMojo {
 
     private static final String AUTH_URL = "http://localhost:9007/auth/j_security_check";
 
+    private static final String WEB_CONSOLE_URL = "http://localhost:9007/system/console";
+
     @Parameter(property = "adeptj.file", defaultValue = "${project.build.directory}/${project.build.finalName}.jar", required = true)
     private String bundleFileName;
 
-    @Parameter(property = "adeptj.console.url", defaultValue = "http://localhost:9007/system/console", required = true)
+    @Parameter(property = "adeptj.console.url", defaultValue = WEB_CONSOLE_URL, required = true)
     private String consoleUrl;
+
+    @Parameter(property = "adeptj.auth.url", defaultValue = AUTH_URL, required = true)
+    private String authUrl;
 
     @Parameter(property = "adeptj.user", defaultValue = "admin", required = true)
     private String user;
@@ -104,15 +109,20 @@ public class BundleDeployMojo extends AbstractMojo {
         this.logBundleInfo(log, bundle);
         try (CloseableHttpClient httpClient = this.getHttpClient()) {
             // First Authenticate and then deploy bundle and pass the JSESSIONID received as a header in Auth call above.
-            CloseableHttpResponse bundleInstallResponse = httpClient.execute(this.bundleDeployRequest(bundle,
-                    this.authenticate(httpClient)));
-            int statusCode = bundleInstallResponse.getStatusLine().getStatusCode();
+            String sessionId = this.authenticate(httpClient);
+            if (sessionId == null) {
+                // Means authentication was not successful.
+                this.getLog().warn("Authentication failed!!");
+                return;
+            }
+            CloseableHttpResponse bundleDeployResponse = httpClient.execute(this.bundleDeployRequest(bundle, sessionId));
+            int statusCode = bundleDeployResponse.getStatusLine().getStatusCode();
             if (statusCode == SC_OK || statusCode == SC_MOVED_TEMPORARILY) {
                 log.info("Bundle deployed successfully, please check AdeptJ OSGi Web Console!!");
             } else {
                 log.info("Seems a problem while deploying bundle, please check AdeptJ OSGi Web Console!!");
             }
-            IOUtils.closeQuietly(bundleInstallResponse);
+            IOUtils.closeQuietly(bundleDeployResponse);
         } catch (Exception ex) {
             throw new MojoExecutionException("Installation on " + this.consoleUrl + " failed, cause: " + ex.getMessage(), ex);
         }
@@ -136,15 +146,18 @@ public class BundleDeployMojo extends AbstractMojo {
 
     private String authenticate(CloseableHttpClient httpClient) throws IOException {
         List<NameValuePair> authForm = new ArrayList<>();
+        this.getLog().info("User: " + this.user);
         authForm.add(new BasicNameValuePair(J_USERNAME, this.user));
         authForm.add(new BasicNameValuePair(J_PASSWORD, this.password));
         UrlEncodedFormEntity entity = new UrlEncodedFormEntity(authForm, Consts.UTF_8);
         HttpUriRequest authRequest = RequestBuilder
-                .post(AUTH_URL)
+                .post(this.authUrl)
                 .setEntity(entity)
                 .build();
         CloseableHttpResponse authResponse = httpClient.execute(authRequest);
         String sessionId = this.getSessionId(authResponse);
+        //this.getLog().info("Session ID: " + sessionId);
+        //this.getLog().info("AuthStatus: " + authResponse.getStatusLine().getStatusCode());
         IOUtils.closeQuietly(authResponse);
         return sessionId;
     }
