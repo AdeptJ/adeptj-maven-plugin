@@ -29,8 +29,8 @@
     <artifactId>adeptj-maven-plugin</artifactId>
     <version>1.0.0.Final</version>
     <packaging>maven-plugin</packaging>
-    <name>AdeptJ Bundle Deploy Plugin</name>
-    <description>Deploys the currently built Bundle to running AdeptJ Runtime instance.</description>
+    <name>AdeptJ Maven Plugin for Supporting Bundle Development</name>
+    <description>AdeptJ Maven Plugin for Supporting Bundle Development</description>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
