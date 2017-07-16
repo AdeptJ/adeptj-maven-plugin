@@ -132,32 +132,33 @@ public class BundleInstallMojo extends AbstractMojo {
         File bundle = new File(this.bundleFileName);
         this.logBundleInfo(log, bundle);
         try (CloseableHttpClient httpClient = this.getHttpClient()) {
-            // First Authenticate, then with next call HttpClient will pass the JSESSIONID received in the Set-Cookie header
-            // while deploying bundle.
-            if (this.authenticate(httpClient) == null) {
-                // means authentication was failed.
-                if (this.failOnError) {
-                    throw new MojoExecutionException("[Authentication failure]");
-                }
-                log.error("Authentication failed, please check credentials!!");
-            } else {
+            // First authenticate, then while installing bundle, HttpClient will pass the JSESSIONID received
+            // in the Set-Cookie header in the auth call. if authentication fails, discontinue the further execution.
+            if (this.authenticate(httpClient)) {
                 CloseableHttpResponse installResponse = httpClient.execute(RequestBuilder
                         .post(this.adeptjConsoleURL + URL_INSTALL)
                         .setEntity(this.multipartEntity(bundle))
                         .build());
-                int statusCode = installResponse.getStatusLine().getStatusCode();
-                if (statusCode == SC_OK) {
+                int status = installResponse.getStatusLine().getStatusCode();
+                if (status == SC_OK) {
                     log.info("Bundle installed successfully, please check AdeptJ OSGi Web Console!!");
                 } else {
                     if (this.failOnError) {
-                        throw new MojoExecutionException("Installation failed, cause: " + statusCode);
+                        throw new MojoExecutionException("Installation failed, cause: " + status);
                     }
                     log.warn("Seems a problem while installing bundle, please check AdeptJ OSGi Web Console!!");
                 }
                 IOUtils.closeQuietly(installResponse);
+            } else {
+                // means authentication was failed.
+                if (this.failOnError) {
+                    throw new MojoExecutionException("[Authentication failed, please check credentials!!]");
+                }
+                log.error("Authentication failed, please check credentials!!");
             }
         } catch (Exception ex) {
-            throw new MojoExecutionException("Installation on [" + this.adeptjConsoleURL + "] failed, cause: " + ex.getMessage(), ex);
+            throw new MojoExecutionException("Installation on [" + this.adeptjConsoleURL + "] failed, cause: "
+                    + ex.getMessage(), ex);
         }
     }
 
@@ -175,7 +176,7 @@ public class BundleInstallMojo extends AbstractMojo {
         return multipartEntityBuilder.build();
     }
 
-    private String authenticate(CloseableHttpClient httpClient) throws IOException {
+    private boolean authenticate(CloseableHttpClient httpClient) throws IOException {
         List<NameValuePair> authForm = new ArrayList<>();
         authForm.add(new BasicNameValuePair(J_USERNAME, this.user));
         authForm.add(new BasicNameValuePair(J_PASSWORD, this.password));
@@ -183,24 +184,27 @@ public class BundleInstallMojo extends AbstractMojo {
                 .post(this.authUrl)
                 .setEntity(new UrlEncodedFormEntity(authForm, UTF_8))
                 .build());
-        String sessionId = this.getSessionId(authResponse);
+        boolean authStatus = this.checkAuthStatus(authResponse);
         IOUtils.closeQuietly(authResponse);
-        return sessionId;
+        return authStatus;
     }
 
     private void logBundleInfo(Log log, File bundle) {
         try (JarFile jarFile = new JarFile(bundle)) {
             Attributes mainAttributes = jarFile.getManifest().getMainAttributes();
             String bundleName = mainAttributes.getValue(BUNDLE_NAME);
+            if (bundleName == null || bundleName.isEmpty()) {
+                throw new IllegalStateException("Artifact is not a Bundle!!");
+            }
             String bsn = mainAttributes.getValue(BUNDLE_SYMBOLICNAME);
             String bundleVersion = mainAttributes.getValue(BUNDLE_VERSION);
-            log.info("Deploying Bundle [" + bundleName + " (" + bsn + "), version: " + bundleVersion + "]");
+            log.info("Installing Bundle [" + bundleName + " (" + bsn + "), version: " + bundleVersion + "]");
         } catch (IOException ex) {
             log.error(ex);
         }
     }
 
-    private String getSessionId(CloseableHttpResponse authResponse) {
+    private boolean checkAuthStatus(CloseableHttpResponse authResponse) {
         String sessionId = null;
         for (Header header : authResponse.getAllHeaders()) {
             String headerName = header.getName();
@@ -216,7 +220,7 @@ public class BundleInstallMojo extends AbstractMojo {
                 break;
             }
         }
-        return sessionId;
+        return sessionId != null;
     }
 
     private CloseableHttpClient getHttpClient() {
