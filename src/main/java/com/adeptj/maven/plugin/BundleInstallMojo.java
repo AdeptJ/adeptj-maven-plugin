@@ -141,7 +141,8 @@ public class BundleInstallMojo extends AbstractMojo {
                         .build());
                 int status = installResponse.getStatusLine().getStatusCode();
                 if (status == SC_OK) {
-                    log.info("Bundle installed successfully, please check AdeptJ OSGi Web Console!!");
+                    log.info("Bundle installed successfully, please check AdeptJ OSGi Web Console"
+                            + " [" + this.adeptjConsoleURL + "]");
                 } else {
                     if (this.failOnError) {
                         throw new MojoExecutionException("Installation failed, cause: " + status);
