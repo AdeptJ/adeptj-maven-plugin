@@ -185,9 +185,9 @@ public class BundleInstallMojo extends AbstractMojo {
                 .post(this.authUrl)
                 .setEntity(new UrlEncodedFormEntity(authForm, UTF_8))
                 .build());
-        boolean authStatus = this.checkAuthStatus(authResponse);
+        boolean authenticated = this.isAuthenticated(authResponse);
         IOUtils.closeQuietly(authResponse);
-        return authStatus;
+        return authenticated;
     }
 
     private void logBundleInfo(Log log, File bundle) {
@@ -205,7 +205,7 @@ public class BundleInstallMojo extends AbstractMojo {
         }
     }
 
-    private boolean checkAuthStatus(CloseableHttpResponse authResponse) {
+    private boolean isAuthenticated(CloseableHttpResponse authResponse) {
         String sessionId = null;
         for (Header header : authResponse.getAllHeaders()) {
             String headerName = header.getName();
