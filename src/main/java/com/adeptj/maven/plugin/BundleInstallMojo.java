@@ -31,7 +31,6 @@ import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
-import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugin.logging.Log;
@@ -55,7 +54,7 @@ import static org.apache.maven.plugins.annotations.LifecyclePhase.INSTALL;
  * @author Rakesh.Kumar, AdeptJ
  */
 @Mojo(name = MOJO_NAME, defaultPhase = INSTALL)
-public class BundleInstallMojo extends AbstractMojo {
+public class BundleInstallMojo extends BundleMojoSupport {
 
     static final String MOJO_NAME = "install";
 
