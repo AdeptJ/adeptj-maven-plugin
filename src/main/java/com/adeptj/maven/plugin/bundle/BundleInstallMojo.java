@@ -18,19 +18,14 @@
 ###############################################################################
 */
 
-package com.adeptj.maven.plugin;
+package com.adeptj.maven.plugin.bundle;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.http.Header;
 import org.apache.http.HttpEntity;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.RequestBuilder;
 import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
-import org.apache.http.message.BasicNameValuePair;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugin.logging.Log;
@@ -39,12 +34,13 @@ import org.apache.maven.plugins.annotations.Parameter;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.jar.Attributes;
 import java.util.jar.JarFile;
 
-import static com.adeptj.maven.plugin.BundleInstallMojo.MOJO_NAME;
+import static com.adeptj.maven.plugin.bundle.BundleInstallMojo.MOJO_NAME;
+import static com.adeptj.maven.plugin.bundle.Constants.BUNDLE_NAME;
+import static com.adeptj.maven.plugin.bundle.Constants.BUNDLE_SYMBOLICNAME;
+import static com.adeptj.maven.plugin.bundle.Constants.BUNDLE_VERSION;
 import static org.apache.http.HttpStatus.SC_OK;
 import static org.apache.maven.plugins.annotations.LifecyclePhase.INSTALL;
 
@@ -54,29 +50,13 @@ import static org.apache.maven.plugins.annotations.LifecyclePhase.INSTALL;
  * @author Rakesh.Kumar, AdeptJ
  */
 @Mojo(name = MOJO_NAME, defaultPhase = INSTALL)
-public class BundleInstallMojo extends BundleMojoSupport {
+public class BundleInstallMojo extends AbstractBundleMojo {
 
     static final String MOJO_NAME = "install";
-
-    private static final String J_USERNAME = "j_username";
-
-    private static final String J_PASSWORD = "j_password";
-
-    private static final String HEADER_JSESSIONID = "JSESSIONID";
-
-    private static final String DEFAULT_AUTH_URL = "http://localhost:9007/auth/j_security_check";
 
     private static final String DEFAULT_CONSOLE_URL = "http://localhost:9007/system/console";
 
     private static final String URL_INSTALL = "/install";
-
-    private static final String HEADER_SET_COOKIE = "Set-Cookie";
-
-    private static final String REGEX_SEMI_COLON = ";";
-
-    private static final String REGEX_EQ = "=";
-
-    private static final String UTF_8 = "UTF-8";
 
     private static final String PARAM_STARTLEVEL = "bundlestartlevel";
 
@@ -92,26 +72,11 @@ public class BundleInstallMojo extends BundleMojoSupport {
 
     private static final String VALUE_TRUE = "true";
 
-    private static final String BUNDLE_NAME = "Bundle-Name";
-
-    private static final String BUNDLE_VERSION = "Bundle-Version";
-
-    private static final String BUNDLE_SYMBOLICNAME = "Bundle-SymbolicName";
-
     @Parameter(property = "adeptj.file", defaultValue = "${project.build.directory}/${project.build.finalName}.jar", required = true)
     private String bundleFileName;
 
     @Parameter(property = "adeptj.console.url", defaultValue = DEFAULT_CONSOLE_URL, required = true)
     private String adeptjConsoleURL;
-
-    @Parameter(property = "adeptj.auth.url", defaultValue = DEFAULT_AUTH_URL, required = true)
-    private String authUrl;
-
-    @Parameter(property = "adeptj.user", defaultValue = "admin", required = true)
-    private String user;
-
-    @Parameter(property = "adeptj.password", defaultValue = "admin", required = true)
-    private String password;
 
     @Parameter(property = "adeptj.failOnError", defaultValue = VALUE_TRUE, required = true)
     private boolean failOnError;
@@ -133,7 +98,7 @@ public class BundleInstallMojo extends BundleMojoSupport {
         try (CloseableHttpClient httpClient = this.getHttpClient()) {
             // First authenticate, then while installing bundle, HttpClient will pass the JSESSIONID received
             // in the Set-Cookie header in the auth call. if authentication fails, discontinue the further execution.
-            if (this.authenticate(httpClient)) {
+            if (this.authenticate()) {
                 CloseableHttpResponse installResponse = httpClient.execute(RequestBuilder
                         .post(this.adeptjConsoleURL + URL_INSTALL)
                         .setEntity(this.multipartEntity(bundle))
@@ -176,19 +141,6 @@ public class BundleInstallMojo extends BundleMojoSupport {
         return multipartEntityBuilder.build();
     }
 
-    private boolean authenticate(CloseableHttpClient httpClient) throws IOException {
-        List<NameValuePair> authForm = new ArrayList<>();
-        authForm.add(new BasicNameValuePair(J_USERNAME, this.user));
-        authForm.add(new BasicNameValuePair(J_PASSWORD, this.password));
-        CloseableHttpResponse authResponse = httpClient.execute(RequestBuilder
-                .post(this.authUrl)
-                .setEntity(new UrlEncodedFormEntity(authForm, UTF_8))
-                .build());
-        boolean authenticated = this.isAuthenticated(authResponse);
-        IOUtils.closeQuietly(authResponse);
-        return authenticated;
-    }
-
     private void logBundleInfo(Log log, File bundle) {
         try (JarFile jarFile = new JarFile(bundle)) {
             Attributes mainAttributes = jarFile.getManifest().getMainAttributes();
@@ -202,28 +154,5 @@ public class BundleInstallMojo extends BundleMojoSupport {
         } catch (IOException ex) {
             log.error(ex);
         }
-    }
-
-    private boolean isAuthenticated(CloseableHttpResponse authResponse) {
-        String sessionId = null;
-        for (Header header : authResponse.getAllHeaders()) {
-            String headerName = header.getName();
-            if (HEADER_SET_COOKIE.equals(headerName)) {
-                for (String part : header.getValue().split(REGEX_SEMI_COLON)) {
-                    if (part.startsWith(HEADER_JSESSIONID)) {
-                        sessionId = part.split(REGEX_EQ)[1];
-                        break;
-                    }
-                }
-            } else if (HEADER_JSESSIONID.equals(headerName)) {
-                sessionId = header.getValue();
-                break;
-            }
-        }
-        return sessionId != null;
-    }
-
-    private CloseableHttpClient getHttpClient() {
-        return HttpClients.createDefault();
     }
 }
