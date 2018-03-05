@@ -39,6 +39,8 @@ public class Constants {
 
     static final String URL_INSTALL = "/install";
 
+    static final String URL_UNINSTALL = "/bundles/%s";
+
     static final String HEADER_SET_COOKIE = "Set-Cookie";
 
     static final String REGEX_SEMI_COLON = ";";

@@ -24,7 +24,7 @@
     <parent>
         <groupId>com.adeptj</groupId>
         <artifactId>adeptj-parent</artifactId>
-        <version>1.0.12.Final</version>
+        <version>1.0.17.Final</version>
     </parent>
     <artifactId>adeptj-maven-plugin</artifactId>
     <version>1.0.2-SNAPSHOT</version>
@@ -34,9 +34,9 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <httpcore.version>4.4.6</httpcore.version>
-        <httpclient.version>4.5.3</httpclient.version>
-        <httpmime.version>4.5.3</httpmime.version>
+        <httpcore.version>4.4.9</httpcore.version>
+        <httpclient.version>4.5.5</httpclient.version>
+        <httpmime.version>4.5.5</httpmime.version>
     </properties>
 
     <!-- Project Information -->

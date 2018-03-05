@@ -41,6 +41,15 @@ import static com.adeptj.maven.plugin.bundle.BundleInstallMojo.MOJO_NAME;
 import static com.adeptj.maven.plugin.bundle.Constants.BUNDLE_NAME;
 import static com.adeptj.maven.plugin.bundle.Constants.BUNDLE_SYMBOLICNAME;
 import static com.adeptj.maven.plugin.bundle.Constants.BUNDLE_VERSION;
+import static com.adeptj.maven.plugin.bundle.Constants.DEFAULT_CONSOLE_URL;
+import static com.adeptj.maven.plugin.bundle.Constants.PARAM_ACTION;
+import static com.adeptj.maven.plugin.bundle.Constants.PARAM_ACTION_VALUE;
+import static com.adeptj.maven.plugin.bundle.Constants.PARAM_BUNDLEFILE;
+import static com.adeptj.maven.plugin.bundle.Constants.PARAM_REFRESH_PACKAGES;
+import static com.adeptj.maven.plugin.bundle.Constants.PARAM_START;
+import static com.adeptj.maven.plugin.bundle.Constants.PARAM_STARTLEVEL;
+import static com.adeptj.maven.plugin.bundle.Constants.URL_INSTALL;
+import static com.adeptj.maven.plugin.bundle.Constants.VALUE_TRUE;
 import static org.apache.http.HttpStatus.SC_OK;
 import static org.apache.maven.plugins.annotations.LifecyclePhase.INSTALL;
 
@@ -54,32 +63,8 @@ public class BundleInstallMojo extends AbstractBundleMojo {
 
     static final String MOJO_NAME = "install";
 
-    private static final String DEFAULT_CONSOLE_URL = "http://localhost:9007/system/console";
-
-    private static final String URL_INSTALL = "/install";
-
-    private static final String PARAM_STARTLEVEL = "bundlestartlevel";
-
-    private static final String PARAM_START = "bundlestart";
-
-    private static final String PARAM_BUNDLEFILE = "bundlefile";
-
-    private static final String PARAM_REFRESH_PACKAGES = "refreshPackages";
-
-    private static final String PARAM_ACTION = "action";
-
-    private static final String PARAM_ACTION_VALUE = "install";
-
-    private static final String VALUE_TRUE = "true";
-
     @Parameter(property = "adeptj.file", defaultValue = "${project.build.directory}/${project.build.finalName}.jar", required = true)
     private String bundleFileName;
-
-    @Parameter(property = "adeptj.console.url", defaultValue = DEFAULT_CONSOLE_URL, required = true)
-    private String adeptjConsoleURL;
-
-    @Parameter(property = "adeptj.failOnError", defaultValue = VALUE_TRUE, required = true)
-    private boolean failOnError;
 
     @Parameter(property = "adeptj.bundle.startlevel", defaultValue = "20", required = true)
     private String bundleStartLevel;
@@ -99,21 +84,21 @@ public class BundleInstallMojo extends AbstractBundleMojo {
             // First authenticate, then while installing bundle, HttpClient will pass the JSESSIONID received
             // in the Set-Cookie header in the auth call. if authentication fails, discontinue the further execution.
             if (this.authenticate()) {
-                CloseableHttpResponse installResponse = httpClient.execute(RequestBuilder
+                try (CloseableHttpResponse installResponse = httpClient.execute(RequestBuilder
                         .post(this.adeptjConsoleURL + URL_INSTALL)
                         .setEntity(this.multipartEntity(bundle))
-                        .build());
-                int status = installResponse.getStatusLine().getStatusCode();
-                if (status == SC_OK) {
-                    log.info("Bundle installed successfully, please check AdeptJ OSGi Web Console"
-                            + " [" + this.adeptjConsoleURL + "]");
-                } else {
-                    if (this.failOnError) {
-                        throw new MojoExecutionException("Installation failed, cause: " + status);
+                        .build())) {
+                    int status = installResponse.getStatusLine().getStatusCode();
+                    if (status == SC_OK) {
+                        log.info("Bundle installed successfully, please check AdeptJ OSGi Web Console"
+                                + " [" + this.adeptjConsoleURL + "]");
+                    } else {
+                        if (this.failOnError) {
+                            throw new MojoExecutionException("Installation failed, cause: " + status);
+                        }
+                        log.warn("Seems a problem while installing bundle, please check AdeptJ OSGi Web Console!!");
                     }
-                    log.warn("Seems a problem while installing bundle, please check AdeptJ OSGi Web Console!!");
                 }
-                IOUtils.closeQuietly(installResponse);
             } else {
                 // means authentication was failed.
                 if (this.failOnError) {
@@ -122,16 +107,15 @@ public class BundleInstallMojo extends AbstractBundleMojo {
                 log.error("Authentication failed, please check credentials!!");
             }
         } catch (Exception ex) {
-            throw new MojoExecutionException("Installation on [" + this.adeptjConsoleURL + "] failed, cause: "
-                    + ex.getMessage(), ex);
+            throw new MojoExecutionException("Installation on [" + this.adeptjConsoleURL + "] failed, cause: " + ex.getMessage(), ex);
         }
     }
 
     private HttpEntity multipartEntity(File bundle) {
-        MultipartEntityBuilder multipartEntityBuilder = MultipartEntityBuilder.create();
-        multipartEntityBuilder.addBinaryBody(PARAM_BUNDLEFILE, bundle);
-        multipartEntityBuilder.addTextBody(PARAM_ACTION, PARAM_ACTION_VALUE);
-        multipartEntityBuilder.addTextBody(PARAM_STARTLEVEL, this.bundleStartLevel);
+        MultipartEntityBuilder multipartEntityBuilder = MultipartEntityBuilder.create()
+                .addBinaryBody(PARAM_BUNDLEFILE, bundle)
+                .addTextBody(PARAM_ACTION, PARAM_ACTION_VALUE)
+                .addTextBody(PARAM_STARTLEVEL, this.bundleStartLevel);
         if (this.bundleStart) {
             multipartEntityBuilder.addTextBody(PARAM_REFRESH_PACKAGES, VALUE_TRUE);
         }

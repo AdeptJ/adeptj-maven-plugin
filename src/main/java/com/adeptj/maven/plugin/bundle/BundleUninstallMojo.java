@@ -20,17 +20,34 @@
 
 package com.adeptj.maven.plugin.bundle;
 
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.RequestBuilder;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.jar.Attributes;
+import java.util.jar.JarFile;
+
+import static com.adeptj.maven.plugin.bundle.BundleUninstallMojo.MOJO_NAME;
+import static com.adeptj.maven.plugin.bundle.Constants.BUNDLE_NAME;
+import static com.adeptj.maven.plugin.bundle.Constants.BUNDLE_SYMBOLICNAME;
+import static com.adeptj.maven.plugin.bundle.Constants.BUNDLE_VERSION;
+import static com.adeptj.maven.plugin.bundle.Constants.URL_INSTALL;
+import static com.adeptj.maven.plugin.bundle.Constants.URL_UNINSTALL;
+import static org.apache.http.HttpStatus.SC_OK;
+
 /**
  * Uninstall an OSGi bundle from a running AdeptJ Runtime instance.
  */
-@Mojo(name = "uninstall")
+@Mojo(name = MOJO_NAME)
 public class BundleUninstallMojo extends AbstractBundleMojo {
 
+    static final String MOJO_NAME = "uninstall";
 
     @Parameter(property = "adeptj.file", defaultValue = "${project.build.directory}/${project.build.finalName}.jar")
     private String bundleFileName;
@@ -39,8 +56,54 @@ public class BundleUninstallMojo extends AbstractBundleMojo {
     @Override
     public void execute() throws MojoExecutionException {
         Log log = getLog();
-        log.info("@@@@@@ In BundleUninstallMojo @@@@@@");
-        log.info("bundleFileName : " + bundleFileName);
+        File bundle = new File(this.bundleFileName);
+        String bsn = this.getBsn(log, bundle);
+        try (CloseableHttpClient httpClient = this.getHttpClient()) {
+            // First authenticate, then while installing bundle, HttpClient will pass the JSESSIONID received
+            // in the Set-Cookie header in the auth call. if authentication fails, discontinue the further execution.
+            if (this.authenticate()) {
+                try (CloseableHttpResponse installResponse = httpClient.execute(RequestBuilder
+                        .post(this.adeptjConsoleURL + String.format(URL_UNINSTALL, bsn))
+                        .addParameter("action", "uninstall")
+                        .build())) {
+                    int status = installResponse.getStatusLine().getStatusCode();
+                    if (status == SC_OK) {
+                        log.info("Bundle uninstalled successfully, please check AdeptJ OSGi Web Console"
+                                + " [" + this.adeptjConsoleURL + "]");
+                    } else {
+                        if (this.failOnError) {
+                            throw new MojoExecutionException("Bundle Uninstall failed, cause: " + status);
+                        }
+                        log.warn("Seems a problem while uninstalling bundle, please check AdeptJ OSGi Web Console!!");
+                    }
+                }
+            } else {
+                // means authentication was failed.
+                if (this.failOnError) {
+                    throw new MojoExecutionException("[Authentication failed, please check credentials!!]");
+                }
+                log.error("Authentication failed, please check credentials!!");
+            }
+        } catch (Exception ex) {
+            throw new MojoExecutionException("Uninstall on [" + this.adeptjConsoleURL + "] failed, cause: " + ex.getMessage(), ex);
+        }
+    }
+
+    private String getBsn(Log log, File bundle) {
+        String bsn = null;
+        try (JarFile jarFile = new JarFile(bundle)) {
+            Attributes mainAttributes = jarFile.getManifest().getMainAttributes();
+            String bundleName = mainAttributes.getValue(BUNDLE_NAME);
+            if (bundleName == null || bundleName.isEmpty()) {
+                throw new IllegalStateException("Artifact is not a Bundle!!");
+            }
+            bsn = mainAttributes.getValue(BUNDLE_SYMBOLICNAME);
+            String bundleVersion = mainAttributes.getValue(BUNDLE_VERSION);
+            log.info("Uninstalling Bundle [" + bundleName + " (" + bsn + "), version: " + bundleVersion + "]");
+        } catch (IOException ex) {
+            log.error(ex);
+        }
+        return bsn;
     }
 
 }

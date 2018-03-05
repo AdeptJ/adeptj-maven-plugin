@@ -20,7 +20,7 @@
 
 package com.adeptj.maven.plugin.bundle;
 
-import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.Header;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
@@ -37,6 +37,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.adeptj.maven.plugin.bundle.Constants.DEFAULT_AUTH_URL;
+import static com.adeptj.maven.plugin.bundle.Constants.DEFAULT_CONSOLE_URL;
 import static com.adeptj.maven.plugin.bundle.Constants.HEADER_JSESSIONID;
 import static com.adeptj.maven.plugin.bundle.Constants.HEADER_SET_COOKIE;
 import static com.adeptj.maven.plugin.bundle.Constants.J_PASSWORD;
@@ -44,6 +45,7 @@ import static com.adeptj.maven.plugin.bundle.Constants.J_USERNAME;
 import static com.adeptj.maven.plugin.bundle.Constants.REGEX_EQ;
 import static com.adeptj.maven.plugin.bundle.Constants.REGEX_SEMI_COLON;
 import static com.adeptj.maven.plugin.bundle.Constants.UTF_8;
+import static com.adeptj.maven.plugin.bundle.Constants.VALUE_TRUE;
 
 /**
  * AbstractBundleMojo
@@ -51,6 +53,12 @@ import static com.adeptj.maven.plugin.bundle.Constants.UTF_8;
  * @author Rakesh.Kumar, AdeptJ
  */
 abstract class AbstractBundleMojo extends AbstractMojo {
+
+    @Parameter(property = "adeptj.console.url", defaultValue = DEFAULT_CONSOLE_URL, required = true)
+    String adeptjConsoleURL;
+
+    @Parameter(property = "adeptj.failOnError", defaultValue = VALUE_TRUE, required = true)
+    boolean failOnError;
 
     @Parameter(property = "adeptj.auth.url", defaultValue = DEFAULT_AUTH_URL, required = true)
     private String authUrl;
@@ -75,16 +83,15 @@ abstract class AbstractBundleMojo extends AbstractMojo {
         List<NameValuePair> authForm = new ArrayList<>();
         authForm.add(new BasicNameValuePair(J_USERNAME, this.user));
         authForm.add(new BasicNameValuePair(J_PASSWORD, this.password));
-        CloseableHttpResponse authResponse = this.httpClient.execute(RequestBuilder
+        try (CloseableHttpResponse authResponse = this.httpClient.execute(RequestBuilder
                 .post(this.authUrl)
                 .setEntity(new UrlEncodedFormEntity(authForm, UTF_8))
-                .build());
-        boolean authenticated = this.isAuthenticated(authResponse);
-        IOUtils.closeQuietly(authResponse);
-        return authenticated;
+                .build())) {
+            return this.parseResponse(authResponse);
+        }
     }
 
-    private boolean isAuthenticated(CloseableHttpResponse authResponse) {
+    private boolean parseResponse(CloseableHttpResponse authResponse) {
         String sessionId = null;
         for (Header header : authResponse.getAllHeaders()) {
             String headerName = header.getName();
@@ -100,6 +107,6 @@ abstract class AbstractBundleMojo extends AbstractMojo {
                 break;
             }
         }
-        return sessionId != null;
+        return StringUtils.isNotEmpty(sessionId);
     }
 }
