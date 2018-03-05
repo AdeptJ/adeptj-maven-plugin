@@ -62,11 +62,11 @@ public class BundleUninstallMojo extends AbstractBundleMojo {
             // First authenticate, then while installing bundle, HttpClient will pass the JSESSIONID received
             // in the Set-Cookie header in the auth call. if authentication fails, discontinue the further execution.
             if (this.authenticate()) {
-                try (CloseableHttpResponse installResponse = httpClient.execute(RequestBuilder
+                try (CloseableHttpResponse uninstallResponse = httpClient.execute(RequestBuilder
                         .post(this.adeptjConsoleURL + String.format(URL_UNINSTALL, bsn))
                         .addParameter("action", "uninstall")
                         .build())) {
-                    int status = installResponse.getStatusLine().getStatusCode();
+                    int status = uninstallResponse.getStatusLine().getStatusCode();
                     if (status == SC_OK) {
                         log.info("Bundle uninstalled successfully, please check AdeptJ OSGi Web Console"
                                 + " [" + this.adeptjConsoleURL + "]");
