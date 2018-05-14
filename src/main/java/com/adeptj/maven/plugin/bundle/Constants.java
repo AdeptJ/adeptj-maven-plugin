@@ -35,7 +35,7 @@ public class Constants {
 
     static final String DEFAULT_AUTH_URL = "http://localhost:9007/auth/j_security_check";
 
-    static final String LOGOUT_URL = "/tools/logout";
+    static final String DEFAULT_LOGOUT_URL = "http://localhost:9007/tools/logout";
 
     static final String DEFAULT_CONSOLE_URL = "http://localhost:9007/system/console";
 

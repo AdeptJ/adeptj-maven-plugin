@@ -24,7 +24,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.http.Header;
 import org.apache.http.NameValuePair;
-import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.RequestBuilder;
@@ -46,15 +45,16 @@ import static com.adeptj.maven.plugin.bundle.Constants.BUNDLE_SYMBOLICNAME;
 import static com.adeptj.maven.plugin.bundle.Constants.BUNDLE_VERSION;
 import static com.adeptj.maven.plugin.bundle.Constants.DEFAULT_AUTH_URL;
 import static com.adeptj.maven.plugin.bundle.Constants.DEFAULT_CONSOLE_URL;
+import static com.adeptj.maven.plugin.bundle.Constants.DEFAULT_LOGOUT_URL;
 import static com.adeptj.maven.plugin.bundle.Constants.HEADER_JSESSIONID;
 import static com.adeptj.maven.plugin.bundle.Constants.HEADER_SET_COOKIE;
 import static com.adeptj.maven.plugin.bundle.Constants.J_PASSWORD;
 import static com.adeptj.maven.plugin.bundle.Constants.J_USERNAME;
-import static com.adeptj.maven.plugin.bundle.Constants.LOGOUT_URL;
 import static com.adeptj.maven.plugin.bundle.Constants.REGEX_EQ;
 import static com.adeptj.maven.plugin.bundle.Constants.REGEX_SEMI_COLON;
 import static com.adeptj.maven.plugin.bundle.Constants.UTF_8;
 import static com.adeptj.maven.plugin.bundle.Constants.VALUE_TRUE;
+import static org.apache.http.HttpStatus.SC_OK;
 
 /**
  * AbstractBundleMojo
@@ -70,13 +70,10 @@ abstract class AbstractBundleMojo extends AbstractMojo {
     @Parameter(property = "adeptj.console.url", defaultValue = DEFAULT_CONSOLE_URL, required = true)
     String adeptjConsoleURL;
 
-    @Parameter(property = "adeptj.failOnError", defaultValue = VALUE_TRUE, required = true)
-    boolean failOnError;
-
     @Parameter(property = "adeptj.auth.url", defaultValue = DEFAULT_AUTH_URL, required = true)
     private String authUrl;
 
-    @Parameter(property = "adeptj.logout.url", defaultValue = LOGOUT_URL)
+    @Parameter(property = "adeptj.logout.url", defaultValue = DEFAULT_LOGOUT_URL)
     private String logoutUrl;
 
     @Parameter(property = "adeptj.user", defaultValue = "admin", required = true)
@@ -84,6 +81,9 @@ abstract class AbstractBundleMojo extends AbstractMojo {
 
     @Parameter(property = "adeptj.password", defaultValue = "admin", required = true)
     private String password;
+
+    @Parameter(property = "adeptj.failOnError", defaultValue = VALUE_TRUE, required = true)
+    boolean failOnError;
 
     private CloseableHttpClient httpClient;
 
@@ -95,27 +95,31 @@ abstract class AbstractBundleMojo extends AbstractMojo {
         return this.httpClient;
     }
 
-    boolean authenticate() throws IOException {
+    boolean login(CloseableHttpClient httpClient) throws IOException {
         List<NameValuePair> authForm = new ArrayList<>();
         authForm.add(new BasicNameValuePair(J_USERNAME, this.user));
         authForm.add(new BasicNameValuePair(J_PASSWORD, this.password));
-        try (CloseableHttpResponse authResponse = this.httpClient.execute(RequestBuilder
-                .post(this.authUrl)
+        try (CloseableHttpResponse authResponse = httpClient.execute(RequestBuilder.post(this.authUrl)
                 .setEntity(new UrlEncodedFormEntity(authForm, UTF_8))
                 .build())) {
             return this.parseResponse(authResponse);
         }
     }
 
-    void logout(HttpClient httpClient) {
-        try {
-            httpClient.execute(RequestBuilder.get(this.logoutUrl).build());
+    void logout(CloseableHttpClient httpClient) {
+        this.getLog().info("Invoking Logout!!");
+        try (CloseableHttpResponse response = httpClient.execute(RequestBuilder.get(this.logoutUrl).build())) {
+            if (response.getStatusLine().getStatusCode() == SC_OK) {
+                this.getLog().info("Logout successful!!");
+            } else {
+                this.getLog().info("Logout failed!!");
+            }
         } catch (IOException ex) {
             this.getLog().error(ex);
         }
     }
 
-    void closeHttpClient(CloseableHttpClient httpClient) {
+    void close(CloseableHttpClient httpClient) {
         try {
             httpClient.close();
         } catch (IOException ex) {

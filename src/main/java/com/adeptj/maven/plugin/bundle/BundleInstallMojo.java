@@ -26,20 +26,13 @@ import org.apache.http.client.methods.RequestBuilder;
 import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 
 import java.io.File;
-import java.io.IOException;
-import java.util.jar.Attributes;
-import java.util.jar.JarFile;
 
 import static com.adeptj.maven.plugin.bundle.BundleInstallMojo.MOJO_NAME;
-import static com.adeptj.maven.plugin.bundle.Constants.BUNDLE_NAME;
-import static com.adeptj.maven.plugin.bundle.Constants.BUNDLE_SYMBOLICNAME;
-import static com.adeptj.maven.plugin.bundle.Constants.BUNDLE_VERSION;
 import static com.adeptj.maven.plugin.bundle.Constants.PARAM_ACTION;
 import static com.adeptj.maven.plugin.bundle.Constants.PARAM_ACTION_VALUE;
 import static com.adeptj.maven.plugin.bundle.Constants.PARAM_BUNDLEFILE;
@@ -61,7 +54,11 @@ public class BundleInstallMojo extends AbstractBundleMojo {
 
     static final String MOJO_NAME = "install";
 
-    @Parameter(property = "adeptj.file", defaultValue = "${project.build.directory}/${project.build.finalName}.jar", required = true)
+    @Parameter(
+            property = "adeptj.file",
+            defaultValue = "${project.build.directory}/${project.build.finalName}.jar",
+            required = true
+    )
     private String bundleFileName;
 
     @Parameter(property = "adeptj.bundle.startlevel", defaultValue = "20", required = true)
@@ -74,19 +71,19 @@ public class BundleInstallMojo extends AbstractBundleMojo {
     private boolean refreshPackages;
 
     @Override
-    public void execute() throws MojoExecutionException, MojoFailureException {
+    public void execute() throws MojoExecutionException {
         Log log = getLog();
         File bundle = new File(this.bundleFileName);
-        this.logBundleInfo(log, bundle);
+        this.getBundleSymbolicName(bundle, BundleMojoOp.INSTALL);
         CloseableHttpClient httpClient = this.getHttpClient();
         try {
-            // First authenticate, then while installing bundle, HttpClient will pass the JSESSIONID received
+            // First login, then while installing bundle, HttpClient will pass the JSESSIONID received
             // in the Set-Cookie header in the auth call. if authentication fails, discontinue the further execution.
-            if (this.authenticate()) {
-                try (CloseableHttpResponse installResponse = httpClient.execute(RequestBuilder
-                        .post(this.adeptjConsoleURL + URL_INSTALL)
-                        .setEntity(this.multipartEntity(bundle))
-                        .build())) {
+            if (this.login(httpClient)) {
+                try (CloseableHttpResponse installResponse =
+                             httpClient.execute(RequestBuilder.post(this.adeptjConsoleURL + URL_INSTALL)
+                                     .setEntity(this.multipartEntity(bundle))
+                                     .build())) {
                     int status = installResponse.getStatusLine().getStatusCode();
                     if (status == SC_OK) {
                         log.info("Bundle installed successfully, please check AdeptJ OSGi Web Console"
@@ -109,7 +106,7 @@ public class BundleInstallMojo extends AbstractBundleMojo {
             throw new MojoExecutionException("Installation on [" + this.adeptjConsoleURL + "] failed, cause: " + ex.getMessage(), ex);
         } finally {
             this.logout(httpClient);
-            this.closeHttpClient(httpClient);
+            this.close(httpClient);
         }
     }
 
@@ -119,26 +116,11 @@ public class BundleInstallMojo extends AbstractBundleMojo {
                 .addTextBody(PARAM_ACTION, PARAM_ACTION_VALUE)
                 .addTextBody(PARAM_STARTLEVEL, this.bundleStartLevel);
         if (this.bundleStart) {
-            multipartEntityBuilder.addTextBody(PARAM_REFRESH_PACKAGES, VALUE_TRUE);
-        }
-        if (this.refreshPackages) {
             multipartEntityBuilder.addTextBody(PARAM_START, VALUE_TRUE);
         }
-        return multipartEntityBuilder.build();
-    }
-
-    private void logBundleInfo(Log log, File bundle) {
-        try (JarFile jarFile = new JarFile(bundle)) {
-            Attributes mainAttributes = jarFile.getManifest().getMainAttributes();
-            String bundleName = mainAttributes.getValue(BUNDLE_NAME);
-            if (bundleName == null || bundleName.isEmpty()) {
-                throw new IllegalStateException("Artifact is not a Bundle!!");
-            }
-            String bsn = mainAttributes.getValue(BUNDLE_SYMBOLICNAME);
-            String bundleVersion = mainAttributes.getValue(BUNDLE_VERSION);
-            log.info("Installing Bundle [" + bundleName + " (" + bsn + "), version: " + bundleVersion + "]");
-        } catch (IOException ex) {
-            log.error(ex);
+        if (this.refreshPackages) {
+            multipartEntityBuilder.addTextBody(PARAM_REFRESH_PACKAGES, VALUE_TRUE);
         }
+        return multipartEntityBuilder.build();
     }
 }
