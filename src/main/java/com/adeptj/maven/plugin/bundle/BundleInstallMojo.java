@@ -34,7 +34,7 @@ import java.io.File;
 
 import static com.adeptj.maven.plugin.bundle.BundleInstallMojo.MOJO_NAME;
 import static com.adeptj.maven.plugin.bundle.Constants.PARAM_ACTION;
-import static com.adeptj.maven.plugin.bundle.Constants.PARAM_ACTION_VALUE;
+import static com.adeptj.maven.plugin.bundle.Constants.PARAM_ACTION_INSTALL_VALUE;
 import static com.adeptj.maven.plugin.bundle.Constants.PARAM_BUNDLEFILE;
 import static com.adeptj.maven.plugin.bundle.Constants.PARAM_REFRESH_PACKAGES;
 import static com.adeptj.maven.plugin.bundle.Constants.PARAM_START;
@@ -90,9 +90,12 @@ public class BundleInstallMojo extends AbstractBundleMojo {
                                 + " [" + this.adeptjConsoleURL + "]");
                     } else {
                         if (this.failOnError) {
-                            throw new MojoExecutionException("Installation failed, cause: " + status);
+                            throw new MojoExecutionException(
+                                    String.format("Bundle installation failed, reason: [%s], status: [%s]",
+                                            installResponse.getStatusLine().getReasonPhrase(),
+                                            status));
                         }
-                        log.warn("Seems a problem while installing bundle, please check AdeptJ OSGi Web Console!!");
+                        log.warn("Problem installing bundle, please check AdeptJ OSGi Web Console!!");
                     }
                 }
             } else {
@@ -113,7 +116,7 @@ public class BundleInstallMojo extends AbstractBundleMojo {
     private HttpEntity multipartEntity(File bundle) {
         MultipartEntityBuilder multipartEntityBuilder = MultipartEntityBuilder.create()
                 .addBinaryBody(PARAM_BUNDLEFILE, bundle)
-                .addTextBody(PARAM_ACTION, PARAM_ACTION_VALUE)
+                .addTextBody(PARAM_ACTION, PARAM_ACTION_INSTALL_VALUE)
                 .addTextBody(PARAM_STARTLEVEL, this.bundleStartLevel);
         if (this.bundleStart) {
             multipartEntityBuilder.addTextBody(PARAM_START, VALUE_TRUE);

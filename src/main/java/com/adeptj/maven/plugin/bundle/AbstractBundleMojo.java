@@ -57,7 +57,7 @@ import static com.adeptj.maven.plugin.bundle.Constants.VALUE_TRUE;
 import static org.apache.http.HttpStatus.SC_OK;
 
 /**
- * AbstractBundleMojo
+ * Base for various bundle mojo implementations.
  *
  * @author Rakesh.Kumar, AdeptJ
  */
@@ -102,7 +102,7 @@ abstract class AbstractBundleMojo extends AbstractMojo {
         try (CloseableHttpResponse authResponse = httpClient.execute(RequestBuilder.post(this.authUrl)
                 .setEntity(new UrlEncodedFormEntity(authForm, UTF_8))
                 .build())) {
-            return this.parseResponse(authResponse);
+            return this.isSessionIdPresent(authResponse);
         }
     }
 
@@ -152,7 +152,7 @@ abstract class AbstractBundleMojo extends AbstractMojo {
         return bsn;
     }
 
-    private boolean parseResponse(CloseableHttpResponse authResponse) {
+    private boolean isSessionIdPresent(CloseableHttpResponse authResponse) {
         String sessionId = null;
         for (Header header : authResponse.getAllHeaders()) {
             String headerName = header.getName();

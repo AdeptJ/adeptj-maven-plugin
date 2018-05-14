@@ -31,6 +31,8 @@ import org.apache.maven.plugins.annotations.Parameter;
 import java.io.File;
 
 import static com.adeptj.maven.plugin.bundle.BundleUninstallMojo.MOJO_NAME;
+import static com.adeptj.maven.plugin.bundle.Constants.PARAM_ACTION;
+import static com.adeptj.maven.plugin.bundle.Constants.PARAM_ACTION_UNINSTALL_VALUE;
 import static com.adeptj.maven.plugin.bundle.Constants.URL_UNINSTALL;
 import static org.apache.http.HttpStatus.SC_OK;
 
@@ -63,7 +65,7 @@ public class BundleUninstallMojo extends AbstractBundleMojo {
             if (this.login(httpClient)) {
                 try (CloseableHttpResponse uninstallResponse =
                              httpClient.execute(RequestBuilder.post(this.adeptjConsoleURL + String.format(URL_UNINSTALL, bsn))
-                                     .addParameter("action", "uninstall")
+                                     .addParameter(PARAM_ACTION, PARAM_ACTION_UNINSTALL_VALUE)
                                      .build())) {
                     int status = uninstallResponse.getStatusLine().getStatusCode();
                     if (status == SC_OK) {
@@ -71,9 +73,12 @@ public class BundleUninstallMojo extends AbstractBundleMojo {
                                 + " [" + this.adeptjConsoleURL + "]");
                     } else {
                         if (this.failOnError) {
-                            throw new MojoExecutionException("Bundle Uninstall failed, cause: " + status);
+                            throw new MojoExecutionException(
+                                    String.format("Couldn't uninstall bundle , reason: [%s], status: [%s]",
+                                            uninstallResponse.getStatusLine().getReasonPhrase(),
+                                            status));
                         }
-                        log.warn("Seems a problem while uninstalling bundle, please check AdeptJ OSGi Web Console!!");
+                        log.error("Problem uninstalling bundle, please check AdeptJ OSGi Web Console!!");
                     }
                 }
             } else {
@@ -84,7 +89,8 @@ public class BundleUninstallMojo extends AbstractBundleMojo {
                 log.error("Authentication failed, please check credentials!!");
             }
         } catch (Exception ex) {
-            throw new MojoExecutionException("Uninstall on [" + this.adeptjConsoleURL + "] failed, cause: " + ex.getMessage(), ex);
+            throw new MojoExecutionException("Bundle uninstall operation on [" + this.adeptjConsoleURL + "] failed, cause: "
+                    + ex.getMessage(), ex);
         } finally {
             this.logout(httpClient);
             this.close(httpClient);

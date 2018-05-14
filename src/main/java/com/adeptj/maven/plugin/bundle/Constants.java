@@ -61,7 +61,9 @@ public class Constants {
 
     static final String PARAM_ACTION = "action";
 
-    static final String PARAM_ACTION_VALUE = "install";
+    static final String PARAM_ACTION_INSTALL_VALUE = "install";
+
+    static final String PARAM_ACTION_UNINSTALL_VALUE = "uninstall";
 
     static final String VALUE_TRUE = "true";
 
