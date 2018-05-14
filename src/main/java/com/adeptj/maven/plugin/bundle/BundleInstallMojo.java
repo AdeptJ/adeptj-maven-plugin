@@ -20,7 +20,6 @@
 
 package com.adeptj.maven.plugin.bundle;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.RequestBuilder;
@@ -41,7 +40,6 @@ import static com.adeptj.maven.plugin.bundle.BundleInstallMojo.MOJO_NAME;
 import static com.adeptj.maven.plugin.bundle.Constants.BUNDLE_NAME;
 import static com.adeptj.maven.plugin.bundle.Constants.BUNDLE_SYMBOLICNAME;
 import static com.adeptj.maven.plugin.bundle.Constants.BUNDLE_VERSION;
-import static com.adeptj.maven.plugin.bundle.Constants.DEFAULT_CONSOLE_URL;
 import static com.adeptj.maven.plugin.bundle.Constants.PARAM_ACTION;
 import static com.adeptj.maven.plugin.bundle.Constants.PARAM_ACTION_VALUE;
 import static com.adeptj.maven.plugin.bundle.Constants.PARAM_BUNDLEFILE;
@@ -80,7 +78,8 @@ public class BundleInstallMojo extends AbstractBundleMojo {
         Log log = getLog();
         File bundle = new File(this.bundleFileName);
         this.logBundleInfo(log, bundle);
-        try (CloseableHttpClient httpClient = this.getHttpClient()) {
+        CloseableHttpClient httpClient = this.getHttpClient();
+        try {
             // First authenticate, then while installing bundle, HttpClient will pass the JSESSIONID received
             // in the Set-Cookie header in the auth call. if authentication fails, discontinue the further execution.
             if (this.authenticate()) {
@@ -108,6 +107,9 @@ public class BundleInstallMojo extends AbstractBundleMojo {
             }
         } catch (Exception ex) {
             throw new MojoExecutionException("Installation on [" + this.adeptjConsoleURL + "] failed, cause: " + ex.getMessage(), ex);
+        } finally {
+            this.logout(httpClient);
+            this.closeHttpClient(httpClient);
         }
     }
 

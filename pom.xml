@@ -24,10 +24,10 @@
     <parent>
         <groupId>com.adeptj</groupId>
         <artifactId>adeptj-parent</artifactId>
-        <version>1.0.17.Final</version>
+        <version>1.0.21.Final</version>
     </parent>
     <artifactId>adeptj-maven-plugin</artifactId>
-    <version>1.0.2.Final</version>
+    <version>1.0.3-SNAPSHOT</version>
     <packaging>maven-plugin</packaging>
     <name>AdeptJ Maven Plugin for Supporting Bundle Development</name>
     <description>AdeptJ Maven Plugin for Supporting Bundle Development</description>

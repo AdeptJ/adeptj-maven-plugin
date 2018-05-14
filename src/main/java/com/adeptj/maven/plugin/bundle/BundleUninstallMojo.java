@@ -37,12 +37,13 @@ import static com.adeptj.maven.plugin.bundle.BundleUninstallMojo.MOJO_NAME;
 import static com.adeptj.maven.plugin.bundle.Constants.BUNDLE_NAME;
 import static com.adeptj.maven.plugin.bundle.Constants.BUNDLE_SYMBOLICNAME;
 import static com.adeptj.maven.plugin.bundle.Constants.BUNDLE_VERSION;
-import static com.adeptj.maven.plugin.bundle.Constants.URL_INSTALL;
 import static com.adeptj.maven.plugin.bundle.Constants.URL_UNINSTALL;
 import static org.apache.http.HttpStatus.SC_OK;
 
 /**
  * Uninstall an OSGi bundle from a running AdeptJ Runtime instance.
+ *
+ * @author Rakesh.Kumar, AdeptJ
  */
 @Mojo(name = MOJO_NAME)
 public class BundleUninstallMojo extends AbstractBundleMojo {
