@@ -27,31 +27,30 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
+import org.jboss.shrinkwrap.resolver.api.maven.Maven;
 
 import java.io.File;
 
-import static com.adeptj.maven.plugin.bundle.BundleInstallMojo.MOJO_NAME;
 import static com.adeptj.maven.plugin.bundle.Constants.URL_INSTALL;
 import static com.adeptj.maven.plugin.bundle.Constants.VALUE_TRUE;
 import static org.apache.http.HttpStatus.SC_OK;
-import static org.apache.maven.plugins.annotations.LifecyclePhase.INSTALL;
 
 /**
- * Mojo for installing the OSGi Bundle to running AdeptJ Runtime instance.
- *
- * @author Rakesh.Kumar, AdeptJ
+ * Install an OSGi bundle from maven repository to a running AdeptJ Runtime instance.
  */
-@Mojo(name = MOJO_NAME, defaultPhase = INSTALL)
-public class BundleInstallMojo extends AbstractBundleMojo {
+@Mojo(name = "install-artifact", requiresProject = false)
+public class BundleInstallArtifactMojo extends AbstractBundleMojo {
 
-    static final String MOJO_NAME = "install";
+    private static final String RESOLVE_FMT = "%s:%s:%s";
 
-    @Parameter(
-            property = "adeptj.file",
-            defaultValue = "${project.build.directory}/${project.build.finalName}.jar",
-            required = true
-    )
-    private String bundleFileName;
+    @Parameter(property = "adeptj.groupId")
+    private String groupId;
+
+    @Parameter(property = "adeptj.artifactId")
+    private String artifactId;
+
+    @Parameter(property = "adeptj.version")
+    private String version;
 
     @Parameter(property = "adeptj.bundle.startlevel", defaultValue = "20", required = true)
     private String bundleStartLevel;
@@ -65,7 +64,10 @@ public class BundleInstallMojo extends AbstractBundleMojo {
     @Override
     public void execute() throws MojoExecutionException {
         Log log = getLog();
-        File bundle = new File(this.bundleFileName);
+        File bundle = Maven.resolver()
+                .resolve(String.format(RESOLVE_FMT, this.groupId, this.artifactId, this.version))
+                .withoutTransitivity()
+                .asSingleFile();
         this.getBundleSymbolicName(bundle, BundleMojoOp.INSTALL);
         CloseableHttpClient httpClient = this.getHttpClient();
         try {

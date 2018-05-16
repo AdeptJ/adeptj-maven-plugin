@@ -20,59 +20,40 @@
 
 package com.adeptj.maven.plugin.bundle;
 
+import org.apache.http.HttpEntity;
+import org.apache.http.entity.mime.MultipartEntityBuilder;
+
+import java.io.File;
+
+import static com.adeptj.maven.plugin.bundle.Constants.PARAM_ACTION;
+import static com.adeptj.maven.plugin.bundle.Constants.PARAM_ACTION_INSTALL_VALUE;
+import static com.adeptj.maven.plugin.bundle.Constants.PARAM_BUNDLEFILE;
+import static com.adeptj.maven.plugin.bundle.Constants.PARAM_REFRESH_PACKAGES;
+import static com.adeptj.maven.plugin.bundle.Constants.PARAM_START;
+import static com.adeptj.maven.plugin.bundle.Constants.PARAM_STARTLEVEL;
+import static com.adeptj.maven.plugin.bundle.Constants.VALUE_TRUE;
+
 /**
- * Constants
+ * Utility methods.
  *
  * @author Rakesh.Kumar, AdeptJ
  */
-public final class Constants {
+final class BundleMojoUtil {
 
-    private Constants() {
+    private BundleMojoUtil() {
     }
 
-    static final String J_USERNAME = "j_username";
-
-    static final String J_PASSWORD = "j_password";
-
-    static final String HEADER_JSESSIONID = "JSESSIONID";
-
-    static final String DEFAULT_AUTH_URL = "http://localhost:9007/auth/j_security_check";
-
-    static final String DEFAULT_LOGOUT_URL = "http://localhost:9007/tools/logout";
-
-    static final String DEFAULT_CONSOLE_URL = "http://localhost:9007/system/console";
-
-    static final String URL_INSTALL = "/install";
-
-    static final String URL_UNINSTALL = "/bundles/%s";
-
-    static final String HEADER_SET_COOKIE = "Set-Cookie";
-
-    static final String REGEX_SEMI_COLON = ";";
-
-    static final String REGEX_EQ = "=";
-
-    static final String UTF_8 = "UTF-8";
-
-    static final String PARAM_STARTLEVEL = "bundlestartlevel";
-
-    static final String PARAM_START = "bundlestart";
-
-    static final String PARAM_BUNDLEFILE = "bundlefile";
-
-    static final String PARAM_REFRESH_PACKAGES = "refreshPackages";
-
-    static final String PARAM_ACTION = "action";
-
-    static final String PARAM_ACTION_INSTALL_VALUE = "install";
-
-    static final String PARAM_ACTION_UNINSTALL_VALUE = "uninstall";
-
-    static final String VALUE_TRUE = "true";
-
-    static final String BUNDLE_NAME = "Bundle-Name";
-
-    static final String BUNDLE_VERSION = "Bundle-Version";
-
-    static final String BUNDLE_SYMBOLICNAME = "Bundle-SymbolicName";
+    static HttpEntity multipartEntity(File bundle, String bundleStartLevel, boolean bundleStart, boolean refreshPackages) {
+        MultipartEntityBuilder multipartEntityBuilder = MultipartEntityBuilder.create()
+                .addBinaryBody(PARAM_BUNDLEFILE, bundle)
+                .addTextBody(PARAM_ACTION, PARAM_ACTION_INSTALL_VALUE)
+                .addTextBody(PARAM_STARTLEVEL, bundleStartLevel);
+        if (bundleStart) {
+            multipartEntityBuilder.addTextBody(PARAM_START, VALUE_TRUE);
+        }
+        if (refreshPackages) {
+            multipartEntityBuilder.addTextBody(PARAM_REFRESH_PACKAGES, VALUE_TRUE);
+        }
+        return multipartEntityBuilder.build();
+    }
 }
