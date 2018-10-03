@@ -85,7 +85,7 @@ abstract class AbstractBundleMojo extends AbstractMojo {
 
     CloseableHttpClient httpClient;
 
-    boolean login() throws IOException {
+    boolean login() {
         if (this.httpClient == null) {
             this.httpClient = HttpClients.createDefault();
             this.getLog().debug("HttpClient initialized!!");
@@ -97,7 +97,10 @@ abstract class AbstractBundleMojo extends AbstractMojo {
                 .setEntity(new UrlEncodedFormEntity(authForm, UTF_8))
                 .build())) {
             return this.isSessionIdPresentInResponse(authResponse);
+        } catch (Exception ex) {
+            this.getLog().error(ex);
         }
+        return false;
     }
 
     void logout() {
