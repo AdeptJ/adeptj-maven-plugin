@@ -52,13 +52,11 @@ public final class Constants {
 
     static final String REGEX_EQ = "=";
 
-    static final String UTF_8 = "UTF-8";
-
-    static final String PARAM_STARTLEVEL = "bundlestartlevel";
+    static final String PARAM_START_LEVEL = "bundlestartlevel";
 
     static final String PARAM_START = "bundlestart";
 
-    static final String PARAM_BUNDLEFILE = "bundlefile";
+    static final String PARAM_BUNDLE_FILE = "bundlefile";
 
     static final String PARAM_REFRESH_PACKAGES = "refreshPackages";
 
@@ -74,5 +72,5 @@ public final class Constants {
 
     static final String BUNDLE_VERSION = "Bundle-Version";
 
-    static final String BUNDLE_SYMBOLICNAME = "Bundle-SymbolicName";
+    static final String BUNDLE_SYMBOLIC_NAME = "Bundle-SymbolicName";
 }

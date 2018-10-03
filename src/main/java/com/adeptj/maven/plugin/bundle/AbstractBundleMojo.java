@@ -37,7 +37,7 @@ import java.util.jar.Attributes;
 import java.util.jar.JarFile;
 
 import static com.adeptj.maven.plugin.bundle.Constants.BUNDLE_NAME;
-import static com.adeptj.maven.plugin.bundle.Constants.BUNDLE_SYMBOLICNAME;
+import static com.adeptj.maven.plugin.bundle.Constants.BUNDLE_SYMBOLIC_NAME;
 import static com.adeptj.maven.plugin.bundle.Constants.BUNDLE_VERSION;
 import static com.adeptj.maven.plugin.bundle.Constants.DEFAULT_AUTH_URL;
 import static com.adeptj.maven.plugin.bundle.Constants.DEFAULT_CONSOLE_URL;
@@ -141,7 +141,7 @@ abstract class AbstractBundleMojo extends AbstractMojo {
             Attributes mainAttributes = bundleArchive.getManifest().getMainAttributes();
             String bundleName = mainAttributes.getValue(BUNDLE_NAME);
             Validate.isTrue(StringUtils.isNotEmpty(bundleName), "Artifact is not a Bundle!!");
-            String bsn = mainAttributes.getValue(BUNDLE_SYMBOLICNAME);
+            String bsn = mainAttributes.getValue(BUNDLE_SYMBOLIC_NAME);
             Validate.isTrue(StringUtils.isNotEmpty(bsn), "Bundle symbolic name is blank!!");
             String bundleVersion = mainAttributes.getValue(BUNDLE_VERSION);
             return new BundleDTO(bundleName, bsn, bundleVersion);

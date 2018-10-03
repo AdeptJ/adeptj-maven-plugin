@@ -27,10 +27,10 @@ import java.io.File;
 
 import static com.adeptj.maven.plugin.bundle.Constants.PARAM_ACTION;
 import static com.adeptj.maven.plugin.bundle.Constants.PARAM_ACTION_INSTALL_VALUE;
-import static com.adeptj.maven.plugin.bundle.Constants.PARAM_BUNDLEFILE;
+import static com.adeptj.maven.plugin.bundle.Constants.PARAM_BUNDLE_FILE;
 import static com.adeptj.maven.plugin.bundle.Constants.PARAM_REFRESH_PACKAGES;
 import static com.adeptj.maven.plugin.bundle.Constants.PARAM_START;
-import static com.adeptj.maven.plugin.bundle.Constants.PARAM_STARTLEVEL;
+import static com.adeptj.maven.plugin.bundle.Constants.PARAM_START_LEVEL;
 import static com.adeptj.maven.plugin.bundle.Constants.VALUE_TRUE;
 
 /**
@@ -45,9 +45,9 @@ final class BundleMojoUtil {
 
     static HttpEntity multipartEntity(File bundle, String bundleStartLevel, boolean bundleStart, boolean refreshPackages) {
         MultipartEntityBuilder multipartEntityBuilder = MultipartEntityBuilder.create()
-                .addBinaryBody(PARAM_BUNDLEFILE, bundle)
+                .addBinaryBody(PARAM_BUNDLE_FILE, bundle)
                 .addTextBody(PARAM_ACTION, PARAM_ACTION_INSTALL_VALUE)
-                .addTextBody(PARAM_STARTLEVEL, bundleStartLevel);
+                .addTextBody(PARAM_START_LEVEL, bundleStartLevel);
         if (bundleStart) {
             multipartEntityBuilder.addTextBody(PARAM_START, VALUE_TRUE);
         }
