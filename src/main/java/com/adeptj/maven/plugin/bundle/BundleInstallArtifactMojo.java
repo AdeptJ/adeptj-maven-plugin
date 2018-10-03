@@ -31,6 +31,7 @@ import org.jboss.shrinkwrap.resolver.api.maven.Maven;
 
 import java.io.File;
 
+import static com.adeptj.maven.plugin.bundle.BundleInstallArtifactMojo.MOJO_NAME;
 import static com.adeptj.maven.plugin.bundle.Constants.URL_INSTALL;
 import static com.adeptj.maven.plugin.bundle.Constants.VALUE_TRUE;
 import static org.apache.http.HttpStatus.SC_OK;
@@ -38,10 +39,12 @@ import static org.apache.http.HttpStatus.SC_OK;
 /**
  * Install an OSGi bundle from maven repository to a running AdeptJ Runtime instance.
  */
-@Mojo(name = "install-artifact", requiresProject = false)
+@Mojo(name = MOJO_NAME, requiresProject = false)
 public class BundleInstallArtifactMojo extends AbstractBundleMojo {
 
-    private static final String RESOLVE_FMT = "%s:%s:%s";
+    static final String MOJO_NAME = "install-artifact";
+
+    private static final String GAV_FMT = "%s:%s:%s";
 
     @Parameter(property = "adeptj.groupId")
     private String groupId;
@@ -63,14 +66,15 @@ public class BundleInstallArtifactMojo extends AbstractBundleMojo {
 
     @Override
     public void execute() throws MojoExecutionException {
-        Log log = getLog();
+        Log log = this.getLog();
         File bundle = Maven.resolver()
-                .resolve(String.format(RESOLVE_FMT, this.groupId, this.artifactId, this.version))
+                .resolve(String.format(GAV_FMT, this.groupId, this.artifactId, this.version))
                 .withoutTransitivity()
                 .asSingleFile();
-        this.getBundleSymbolicName(bundle, BundleMojoOp.INSTALL);
         CloseableHttpClient httpClient = this.getHttpClient();
         try {
+            BundleDTO dto = this.getBundleDTO(bundle);
+            this.logBundleDetails(dto, BundleMojoOp.INSTALL);
             // First login, then while installing bundle, HttpClient will pass the JSESSIONID received
             // in the Set-Cookie header in the auth call. if authentication fails, discontinue the further execution.
             if (this.login(httpClient)) {

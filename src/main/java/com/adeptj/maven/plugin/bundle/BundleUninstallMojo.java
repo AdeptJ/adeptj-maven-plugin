@@ -55,16 +55,17 @@ public class BundleUninstallMojo extends AbstractBundleMojo {
 
     @Override
     public void execute() throws MojoExecutionException {
-        Log log = getLog();
+        Log log = this.getLog();
         File bundle = new File(this.bundleFileName);
-        String bsn = this.getBundleSymbolicName(bundle, BundleMojoOp.UNINSTALL);
         CloseableHttpClient httpClient = this.getHttpClient();
         try {
+            BundleDTO dto = this.getBundleDTO(bundle);
+            this.logBundleDetails(dto, BundleMojoOp.UNINSTALL);
             // First login, then while installing bundle, HttpClient will pass the JSESSIONID received
             // in the Set-Cookie header in the auth call. if authentication fails, discontinue the further execution.
             if (this.login(httpClient)) {
                 try (CloseableHttpResponse uninstallResponse =
-                             httpClient.execute(RequestBuilder.post(this.adeptjConsoleURL + String.format(URL_UNINSTALL, bsn))
+                             httpClient.execute(RequestBuilder.post(this.adeptjConsoleURL + String.format(URL_UNINSTALL, dto.getBsn()))
                                      .addParameter(PARAM_ACTION, PARAM_ACTION_UNINSTALL_VALUE)
                                      .build())) {
                     int status = uninstallResponse.getStatusLine().getStatusCode();

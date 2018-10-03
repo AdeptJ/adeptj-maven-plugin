@@ -21,23 +21,28 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <parent>
-        <groupId>com.adeptj</groupId>
-        <artifactId>adeptj-parent</artifactId>
-        <version>1.0.22.Final</version>
-        <relativePath/>
-    </parent>
+    <groupId>com.adeptj</groupId>
     <artifactId>adeptj-maven-plugin</artifactId>
-    <version>1.0.3.Final</version>
+    <version>1.0.4.Final</version>
     <packaging>maven-plugin</packaging>
-    <name>AdeptJ Maven Plugin for Supporting Bundle Development</name>
+    <name>AdeptJ :: Maven Plugin</name>
     <description>AdeptJ Maven Plugin for Supporting Bundle Development</description>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <httpcore.version>4.4.9</httpcore.version>
-        <httpclient.version>4.5.5</httpclient.version>
-        <httpmime.version>4.5.5</httpmime.version>
+        <httpcore.version>4.4.10</httpcore.version>
+        <httpclient.version>4.5.6</httpclient.version>
+        <httpmime.version>4.5.6</httpmime.version>
+        <shrinkwrap.version>3.1.3</shrinkwrap.version>
+        <maven-compiler-plugin.version>3.8.0</maven-compiler-plugin.version>
+        <maven.compiler.target>1.8</maven.compiler.target>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <jdk.version>1.8</jdk.version>
+        <commons-io.version>2.6</commons-io.version>
+        <commons-lang.version>3.8.1</commons-lang.version>
+        <commons-logging.version>1.2</commons-logging.version>
+        <maven-plugin-api.version>3.5.4</maven-plugin-api.version>
+        <maven-plugin-annotations.version>3.5.2</maven-plugin-annotations.version>
     </properties>
 
     <!-- Project Information -->
@@ -68,7 +73,7 @@
             </roles>
             <timezone>+5:30</timezone>
             <properties>
-                <picUrl>https://media.licdn.com/media/AAEAAQAAAAAAAAecAAAAJDdjMDcwZjM3LWY0OWYtNDkwYS05Njg4LWU0YWJjNWU5Mzk2Mw.jpg</picUrl>
+                <picUrl>https://pbs.twimg.com/profile_images/1040111465582276608/DorLUu-__bigger.jpg</picUrl>
             </properties>
         </developer>
     </developers>
@@ -102,6 +107,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <version>${maven-compiler-plugin.version}</version>
                 <configuration>
                     <compilerArgument>-parameters</compilerArgument>
                     <source>${maven.compiler.source}</source>
@@ -118,13 +124,13 @@
         <dependency>
             <groupId>org.apache.maven</groupId>
             <artifactId>maven-plugin-api</artifactId>
-            <version>3.5.3</version>
+            <version>${maven-plugin-api.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.apache.maven.plugin-tools</groupId>
             <artifactId>maven-plugin-annotations</artifactId>
-            <version>3.5.1</version>
+            <version>${maven-plugin-annotations.version}</version>
         </dependency>
 
         <!-- ShrinkWrap -->
@@ -132,55 +138,55 @@
         <dependency>
             <groupId>org.jboss.shrinkwrap.resolver</groupId>
             <artifactId>shrinkwrap-resolver-api</artifactId>
-            <version>3.1.3</version>
+            <version>${shrinkwrap.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.jboss.shrinkwrap.resolver</groupId>
             <artifactId>shrinkwrap-resolver-spi</artifactId>
-            <version>3.1.3</version>
+            <version>${shrinkwrap.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.jboss.shrinkwrap.resolver</groupId>
             <artifactId>shrinkwrap-resolver-api-maven</artifactId>
-            <version>3.1.3</version>
+            <version>${shrinkwrap.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.jboss.shrinkwrap.resolver</groupId>
             <artifactId>shrinkwrap-resolver-spi-maven</artifactId>
-            <version>3.1.3</version>
+            <version>${shrinkwrap.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.jboss.shrinkwrap.resolver</groupId>
             <artifactId>shrinkwrap-resolver-impl-maven</artifactId>
-            <version>3.1.3</version>
+            <version>${shrinkwrap.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.jboss.shrinkwrap.resolver</groupId>
             <artifactId>shrinkwrap-resolver-impl-maven-archive</artifactId>
-            <version>3.1.3</version>
+            <version>${shrinkwrap.version}</version>
         </dependency>
 
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
-            <scope>compile</scope>
+            <version>${commons-io.version}</version>
         </dependency>
 
         <dependency>
             <groupId>commons-logging</groupId>
             <artifactId>commons-logging</artifactId>
-            <scope>compile</scope>
+            <version>${commons-logging.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
-            <scope>compile</scope>
+            <version>${commons-lang.version}</version>
         </dependency>
 
         <dependency>

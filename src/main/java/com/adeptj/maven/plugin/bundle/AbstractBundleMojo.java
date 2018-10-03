@@ -102,7 +102,7 @@ abstract class AbstractBundleMojo extends AbstractMojo {
         try (CloseableHttpResponse authResponse = httpClient.execute(RequestBuilder.post(this.authUrl)
                 .setEntity(new UrlEncodedFormEntity(authForm, UTF_8))
                 .build())) {
-            return this.isSessionIdPresent(authResponse);
+            return this.isSessionIdPresentInResponse(authResponse);
         }
     }
 
@@ -127,32 +127,30 @@ abstract class AbstractBundleMojo extends AbstractMojo {
         }
     }
 
-    String getBundleSymbolicName(File bundle, BundleMojoOp op) {
-        String bsn = null;
+    void logBundleDetails(BundleDTO dto, BundleMojoOp op) {
+        switch (op) {
+            case INSTALL:
+                this.getLog().info(String.format(INSTALL_MSG, dto.getBundleName(), dto.getBsn(), dto.getBundleVersion()));
+                break;
+            case UNINSTALL:
+                this.getLog().info(String.format(UNINSTALL_MSG, dto.getBundleName(), dto.getBsn(), dto.getBundleVersion()));
+                break;
+        }
+    }
+
+    BundleDTO getBundleDTO(File bundle) throws IOException {
         try (JarFile jarFile = new JarFile(bundle)) {
             Attributes mainAttributes = jarFile.getManifest().getMainAttributes();
             String bundleName = mainAttributes.getValue(BUNDLE_NAME);
-            if (bundleName == null || bundleName.isEmpty()) {
-                throw new IllegalStateException("Artifact is not a Bundle!!");
-            }
-            bsn = mainAttributes.getValue(BUNDLE_SYMBOLICNAME);
+            Validate.isTrue(StringUtils.isNotEmpty(bundleName), "Artifact is not a Bundle!!");
+            String bsn = mainAttributes.getValue(BUNDLE_SYMBOLICNAME);
             Validate.isTrue(StringUtils.isNotEmpty(bsn), "Bundle symbolic name is blank!!");
             String bundleVersion = mainAttributes.getValue(BUNDLE_VERSION);
-            switch (op) {
-                case INSTALL:
-                    this.getLog().info(String.format(INSTALL_MSG, bundleName, bsn, bundleVersion));
-                    break;
-                case UNINSTALL:
-                    this.getLog().info(String.format(UNINSTALL_MSG, bundleName, bsn, bundleVersion));
-                    break;
-            }
-        } catch (IOException ex) {
-            this.getLog().error(ex);
+            return new BundleDTO(bundleName, bsn, bundleVersion);
         }
-        return bsn;
     }
 
-    private boolean isSessionIdPresent(CloseableHttpResponse authResponse) {
+    private boolean isSessionIdPresentInResponse(CloseableHttpResponse authResponse) {
         String sessionId = null;
         for (Header header : authResponse.getAllHeaders()) {
             String headerName = header.getName();
@@ -160,14 +158,20 @@ abstract class AbstractBundleMojo extends AbstractMojo {
                 for (String part : header.getValue().split(REGEX_SEMI_COLON)) {
                     if (part.startsWith(HEADER_JSESSIONID)) {
                         sessionId = part.split(REGEX_EQ)[1];
+                        this.getLog().info("AdeptJ Session id from SET-COOKIE header: " + sessionId);
                         break;
                     }
                 }
             } else if (HEADER_JSESSIONID.equals(headerName)) {
                 sessionId = header.getValue();
+                this.getLog().info("AdeptJ Session id from JSESSIONID header: " + sessionId);
                 break;
             }
         }
-        return StringUtils.isNotEmpty(sessionId);
+        boolean loginSucceeded = StringUtils.isNotEmpty(sessionId);
+        if (loginSucceeded) {
+            this.getLog().info("Login succeeded!!");
+        }
+        return loginSucceeded;
     }
 }
