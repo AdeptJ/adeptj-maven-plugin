@@ -23,20 +23,16 @@ package com.adeptj.maven.plugin.bundle;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.http.Header;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.methods.RequestBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
-import org.apache.http.message.BasicNameValuePair;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugins.annotations.Parameter;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.jar.Attributes;
 import java.util.jar.JarFile;
 
@@ -52,8 +48,8 @@ import static com.adeptj.maven.plugin.bundle.Constants.J_PASSWORD;
 import static com.adeptj.maven.plugin.bundle.Constants.J_USERNAME;
 import static com.adeptj.maven.plugin.bundle.Constants.REGEX_EQ;
 import static com.adeptj.maven.plugin.bundle.Constants.REGEX_SEMI_COLON;
-import static com.adeptj.maven.plugin.bundle.Constants.UTF_8;
 import static com.adeptj.maven.plugin.bundle.Constants.VALUE_TRUE;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.http.HttpStatus.SC_OK;
 
 /**
@@ -90,12 +86,12 @@ abstract class AbstractBundleMojo extends AbstractMojo {
             this.httpClient = HttpClients.createDefault();
             this.getLog().debug("HttpClient initialized!!");
         }
-        List<NameValuePair> authForm = new ArrayList<>();
-        authForm.add(new BasicNameValuePair(J_USERNAME, this.user));
-        authForm.add(new BasicNameValuePair(J_PASSWORD, this.password));
-        try (CloseableHttpResponse authResponse = this.httpClient.execute(RequestBuilder.post(this.authUrl)
-                .setEntity(new UrlEncodedFormEntity(authForm, UTF_8))
-                .build())) {
+        HttpUriRequest request = RequestBuilder.post(this.authUrl)
+                .addParameter(J_USERNAME, this.user)
+                .addParameter(J_PASSWORD, this.password)
+                .setCharset(UTF_8)
+                .build();
+        try (CloseableHttpResponse authResponse = this.httpClient.execute(request)) {
             return this.isSessionIdPresentInResponse(authResponse);
         } catch (Exception ex) {
             this.getLog().error(ex);

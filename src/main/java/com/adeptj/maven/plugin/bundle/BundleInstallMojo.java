@@ -21,6 +21,7 @@
 package com.adeptj.maven.plugin.bundle;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.methods.RequestBuilder;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
@@ -32,6 +33,7 @@ import java.io.File;
 import static com.adeptj.maven.plugin.bundle.BundleInstallMojo.MOJO_NAME;
 import static com.adeptj.maven.plugin.bundle.Constants.URL_INSTALL;
 import static com.adeptj.maven.plugin.bundle.Constants.VALUE_TRUE;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.http.HttpStatus.SC_OK;
 import static org.apache.maven.plugins.annotations.LifecyclePhase.INSTALL;
 
@@ -71,11 +73,11 @@ public class BundleInstallMojo extends AbstractBundleMojo {
             // First login, then while installing bundle, HttpClient will pass the JSESSIONID received
             // in the Set-Cookie header in the auth call. if authentication fails, discontinue the further execution.
             if (this.login()) {
-                try (CloseableHttpResponse installResponse =
-                             this.httpClient.execute(RequestBuilder.post(this.adeptjConsoleURL + URL_INSTALL)
-                                     .setEntity(BundleMojoUtil.multipartEntity(bundle, this.bundleStartLevel,
-                                             this.bundleStart, this.refreshPackages))
-                                     .build())) {
+                HttpUriRequest request = RequestBuilder.post(this.adeptjConsoleURL + URL_INSTALL)
+                        .setEntity(BundleMojoUtil.multipartEntity(bundle, this.bundleStartLevel, this.bundleStart, this.refreshPackages))
+                        .setCharset(UTF_8)
+                        .build();
+                try (CloseableHttpResponse installResponse = this.httpClient.execute(request)) {
                     int status = installResponse.getStatusLine().getStatusCode();
                     if (status == SC_OK) {
                         log.info("Bundle installed successfully, please check AdeptJ OSGi Web Console"

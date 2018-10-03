@@ -21,6 +21,7 @@
 package com.adeptj.maven.plugin.bundle;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.methods.RequestBuilder;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
@@ -33,6 +34,7 @@ import static com.adeptj.maven.plugin.bundle.BundleUninstallMojo.MOJO_NAME;
 import static com.adeptj.maven.plugin.bundle.Constants.PARAM_ACTION;
 import static com.adeptj.maven.plugin.bundle.Constants.PARAM_ACTION_UNINSTALL_VALUE;
 import static com.adeptj.maven.plugin.bundle.Constants.URL_UNINSTALL;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.http.HttpStatus.SC_OK;
 
 /**
@@ -62,10 +64,11 @@ public class BundleUninstallMojo extends AbstractBundleMojo {
             // First login, then while installing bundle, HttpClient will pass the JSESSIONID received
             // in the Set-Cookie header in the auth call. if authentication fails, discontinue the further execution.
             if (this.login()) {
-                try (CloseableHttpResponse uninstallResponse =
-                             this.httpClient.execute(RequestBuilder.post(this.adeptjConsoleURL + String.format(URL_UNINSTALL, dto.getBsn()))
-                                     .addParameter(PARAM_ACTION, PARAM_ACTION_UNINSTALL_VALUE)
-                                     .build())) {
+                HttpUriRequest request = RequestBuilder.post(this.adeptjConsoleURL + String.format(URL_UNINSTALL, dto.getBsn()))
+                        .addParameter(PARAM_ACTION, PARAM_ACTION_UNINSTALL_VALUE)
+                        .setCharset(UTF_8)
+                        .build();
+                try (CloseableHttpResponse uninstallResponse = this.httpClient.execute(request)) {
                     int status = uninstallResponse.getStatusLine().getStatusCode();
                     if (status == SC_OK) {
                         log.info("Bundle uninstalled successfully, please check AdeptJ OSGi Web Console"
