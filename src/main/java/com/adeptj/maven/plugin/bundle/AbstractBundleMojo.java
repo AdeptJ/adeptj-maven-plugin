@@ -63,10 +63,6 @@ import static org.apache.http.HttpStatus.SC_OK;
  */
 abstract class AbstractBundleMojo extends AbstractMojo {
 
-    private static final String UNINSTALL_MSG = "Uninstalling Bundle [%s (%s), version: %s]";
-
-    private static final String INSTALL_MSG = "Installing Bundle [%s (%s), version: %s]";
-
     @Parameter(property = "adeptj.console.url", defaultValue = DEFAULT_CONSOLE_URL, required = true)
     String adeptjConsoleURL;
 
@@ -92,7 +88,7 @@ abstract class AbstractBundleMojo extends AbstractMojo {
     boolean login() throws IOException {
         if (this.httpClient == null) {
             this.httpClient = HttpClients.createDefault();
-            this.getLog().info("HttpClient initialized!!");
+            this.getLog().debug("HttpClient initialized!!");
         }
         List<NameValuePair> authForm = new ArrayList<>();
         authForm.add(new BasicNameValuePair(J_USERNAME, this.user));
@@ -106,12 +102,12 @@ abstract class AbstractBundleMojo extends AbstractMojo {
 
     void logout() {
         if (this.loginSucceeded) {
-            this.getLog().info("Invoking Logout!!");
+            this.getLog().debug("Invoking Logout!!");
             try (CloseableHttpResponse response = this.httpClient.execute(RequestBuilder.get(this.logoutUrl).build())) {
                 if (response.getStatusLine().getStatusCode() == SC_OK) {
-                    this.getLog().info("Logout successful!!");
+                    this.getLog().debug("Logout successful!!");
                 } else {
-                    this.getLog().info("Logout failed!!");
+                    this.getLog().debug("Logout failed!!");
                 }
             } catch (IOException ex) {
                 this.getLog().error(ex);
@@ -123,7 +119,7 @@ abstract class AbstractBundleMojo extends AbstractMojo {
         if (this.httpClient != null) {
             try {
                 this.httpClient.close();
-                this.getLog().info("HttpClient closed!!");
+                this.getLog().debug("HttpClient closed!!");
             } catch (IOException ex) {
                 this.getLog().error(ex);
             }
@@ -161,19 +157,19 @@ abstract class AbstractBundleMojo extends AbstractMojo {
                 for (String part : header.getValue().split(REGEX_SEMI_COLON)) {
                     if (part.startsWith(HEADER_JSESSIONID)) {
                         sessionId = part.split(REGEX_EQ)[1];
-                        this.getLog().info("AdeptJ SessionId from [SET-COOKIE] header: " + sessionId);
+                        this.getLog().debug("Retrieved AdeptJ SessionId from [SET-COOKIE] header: " + sessionId);
                         break;
                     }
                 }
             } else if (HEADER_JSESSIONID.equals(headerName)) {
                 sessionId = header.getValue();
-                this.getLog().info("AdeptJ SessionId from [JSESSIONID] header: " + sessionId);
+                this.getLog().debug("Retrieved AdeptJ SessionId from [JSESSIONID] header: " + sessionId);
                 break;
             }
         }
         if (StringUtils.isNotEmpty(sessionId)) {
             this.loginSucceeded = true;
-            this.getLog().info("Login succeeded!!");
+            this.getLog().debug("Login succeeded!!");
         }
         return this.loginSucceeded;
     }
