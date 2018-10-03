@@ -92,11 +92,27 @@ abstract class AbstractBundleMojo extends AbstractMojo {
                 .setCharset(UTF_8)
                 .build();
         try (CloseableHttpResponse authResponse = this.httpClient.execute(request)) {
-            return this.isSessionIdPresentInResponse(authResponse);
+            String sessionId = null;
+            for (Header header : authResponse.getAllHeaders()) {
+                if (StringUtils.equals(HEADER_SET_COOKIE, header.getName())) {
+                    for (String part : header.getValue().split(REGEX_SEMI_COLON)) {
+                        if (StringUtils.startsWith(part, HEADER_JSESSIONID)) {
+                            sessionId = part.split(REGEX_EQ)[1];
+                            this.getLog().debug("Retrieved AdeptJ SessionId from [SET-COOKIE] header: " + sessionId);
+                            break;
+                        }
+                    }
+                    if (StringUtils.isNotEmpty(sessionId)) {
+                        this.loginSucceeded = true;
+                        this.getLog().debug("Login succeeded!!");
+                        break;
+                    }
+                }
+            }
         } catch (Exception ex) {
             this.getLog().error(ex);
         }
-        return false;
+        return this.loginSucceeded;
     }
 
     void logout() {
@@ -146,30 +162,5 @@ abstract class AbstractBundleMojo extends AbstractMojo {
             String bundleVersion = mainAttributes.getValue(BUNDLE_VERSION);
             return new BundleDTO(bundleName, bsn, bundleVersion);
         }
-    }
-
-    private boolean isSessionIdPresentInResponse(CloseableHttpResponse authResponse) {
-        String sessionId = null;
-        for (Header header : authResponse.getAllHeaders()) {
-            String headerName = header.getName();
-            if (HEADER_SET_COOKIE.equals(headerName)) {
-                for (String part : header.getValue().split(REGEX_SEMI_COLON)) {
-                    if (part.startsWith(HEADER_JSESSIONID)) {
-                        sessionId = part.split(REGEX_EQ)[1];
-                        this.getLog().debug("Retrieved AdeptJ SessionId from [SET-COOKIE] header: " + sessionId);
-                        break;
-                    }
-                }
-            } else if (HEADER_JSESSIONID.equals(headerName)) {
-                sessionId = header.getValue();
-                this.getLog().debug("Retrieved AdeptJ SessionId from [JSESSIONID] header: " + sessionId);
-                break;
-            }
-        }
-        if (StringUtils.isNotEmpty(sessionId)) {
-            this.loginSucceeded = true;
-            this.getLog().debug("Login succeeded!!");
-        }
-        return this.loginSucceeded;
     }
 }
