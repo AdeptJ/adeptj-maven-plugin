@@ -22,7 +22,6 @@ package com.adeptj.maven.plugin.bundle;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.RequestBuilder;
-import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugins.annotations.Mojo;
@@ -66,15 +65,14 @@ public class BundleInstallMojo extends AbstractBundleMojo {
     public void execute() throws MojoExecutionException {
         Log log = this.getLog();
         File bundle = new File(this.bundleFileName);
-        CloseableHttpClient httpClient = this.getHttpClient();
         try {
             BundleDTO dto = this.getBundleDTO(bundle);
             this.logBundleDetails(dto, BundleMojoOp.INSTALL);
             // First login, then while installing bundle, HttpClient will pass the JSESSIONID received
             // in the Set-Cookie header in the auth call. if authentication fails, discontinue the further execution.
-            if (this.login(httpClient)) {
+            if (this.login()) {
                 try (CloseableHttpResponse installResponse =
-                             httpClient.execute(RequestBuilder.post(this.adeptjConsoleURL + URL_INSTALL)
+                             this.httpClient.execute(RequestBuilder.post(this.adeptjConsoleURL + URL_INSTALL)
                                      .setEntity(BundleMojoUtil.multipartEntity(bundle, this.bundleStartLevel,
                                              this.bundleStart, this.refreshPackages))
                                      .build())) {
@@ -102,8 +100,8 @@ public class BundleInstallMojo extends AbstractBundleMojo {
         } catch (Exception ex) {
             throw new MojoExecutionException("Installation on [" + this.adeptjConsoleURL + "] failed, cause: " + ex.getMessage(), ex);
         } finally {
-            this.logout(httpClient);
-            this.close(httpClient);
+            this.logout();
+            this.closeHttpClient();
         }
     }
 }

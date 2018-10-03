@@ -22,7 +22,6 @@ package com.adeptj.maven.plugin.bundle;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.RequestBuilder;
-import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugins.annotations.Mojo;
@@ -57,15 +56,14 @@ public class BundleUninstallMojo extends AbstractBundleMojo {
     public void execute() throws MojoExecutionException {
         Log log = this.getLog();
         File bundle = new File(this.bundleFileName);
-        CloseableHttpClient httpClient = this.getHttpClient();
         try {
             BundleDTO dto = this.getBundleDTO(bundle);
             this.logBundleDetails(dto, BundleMojoOp.UNINSTALL);
             // First login, then while installing bundle, HttpClient will pass the JSESSIONID received
             // in the Set-Cookie header in the auth call. if authentication fails, discontinue the further execution.
-            if (this.login(httpClient)) {
+            if (this.login()) {
                 try (CloseableHttpResponse uninstallResponse =
-                             httpClient.execute(RequestBuilder.post(this.adeptjConsoleURL + String.format(URL_UNINSTALL, dto.getBsn()))
+                             this.httpClient.execute(RequestBuilder.post(this.adeptjConsoleURL + String.format(URL_UNINSTALL, dto.getBsn()))
                                      .addParameter(PARAM_ACTION, PARAM_ACTION_UNINSTALL_VALUE)
                                      .build())) {
                     int status = uninstallResponse.getStatusLine().getStatusCode();
@@ -93,8 +91,8 @@ public class BundleUninstallMojo extends AbstractBundleMojo {
             throw new MojoExecutionException("Bundle uninstall operation on [" + this.adeptjConsoleURL + "] failed, cause: "
                     + ex.getMessage(), ex);
         } finally {
-            this.logout(httpClient);
-            this.close(httpClient);
+            this.logout();
+            this.closeHttpClient();
         }
     }
 }

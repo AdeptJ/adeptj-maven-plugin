@@ -50,4 +50,9 @@ class BundleDTO {
     String getBundleVersion() {
         return bundleVersion;
     }
+
+    @Override
+    public String toString() {
+        return "Bundle [" + this.bundleName + " (" + this.bsn + ")," + " version: " + this.bundleVersion + "]";
+    }
 }

@@ -85,62 +85,65 @@ abstract class AbstractBundleMojo extends AbstractMojo {
     @Parameter(property = "adeptj.failOnError", defaultValue = VALUE_TRUE, required = true)
     boolean failOnError;
 
-    private CloseableHttpClient httpClient;
+    private boolean loginSucceeded;
 
-    AbstractBundleMojo() {
-        this.httpClient = HttpClients.createDefault();
-    }
+    CloseableHttpClient httpClient;
 
-    CloseableHttpClient getHttpClient() {
-        return this.httpClient;
-    }
-
-    boolean login(CloseableHttpClient httpClient) throws IOException {
+    boolean login() throws IOException {
+        if (this.httpClient == null) {
+            this.httpClient = HttpClients.createDefault();
+            this.getLog().info("HttpClient initialized!!");
+        }
         List<NameValuePair> authForm = new ArrayList<>();
         authForm.add(new BasicNameValuePair(J_USERNAME, this.user));
         authForm.add(new BasicNameValuePair(J_PASSWORD, this.password));
-        try (CloseableHttpResponse authResponse = httpClient.execute(RequestBuilder.post(this.authUrl)
+        try (CloseableHttpResponse authResponse = this.httpClient.execute(RequestBuilder.post(this.authUrl)
                 .setEntity(new UrlEncodedFormEntity(authForm, UTF_8))
                 .build())) {
             return this.isSessionIdPresentInResponse(authResponse);
         }
     }
 
-    void logout(CloseableHttpClient httpClient) {
-        this.getLog().info("Invoking Logout!!");
-        try (CloseableHttpResponse response = httpClient.execute(RequestBuilder.get(this.logoutUrl).build())) {
-            if (response.getStatusLine().getStatusCode() == SC_OK) {
-                this.getLog().info("Logout successful!!");
-            } else {
-                this.getLog().info("Logout failed!!");
+    void logout() {
+        if (this.loginSucceeded) {
+            this.getLog().info("Invoking Logout!!");
+            try (CloseableHttpResponse response = this.httpClient.execute(RequestBuilder.get(this.logoutUrl).build())) {
+                if (response.getStatusLine().getStatusCode() == SC_OK) {
+                    this.getLog().info("Logout successful!!");
+                } else {
+                    this.getLog().info("Logout failed!!");
+                }
+            } catch (IOException ex) {
+                this.getLog().error(ex);
             }
-        } catch (IOException ex) {
-            this.getLog().error(ex);
         }
     }
 
-    void close(CloseableHttpClient httpClient) {
-        try {
-            httpClient.close();
-        } catch (IOException ex) {
-            this.getLog().error(ex);
+    void closeHttpClient() {
+        if (this.httpClient != null) {
+            try {
+                this.httpClient.close();
+                this.getLog().info("HttpClient closed!!");
+            } catch (IOException ex) {
+                this.getLog().error(ex);
+            }
         }
     }
 
     void logBundleDetails(BundleDTO dto, BundleMojoOp op) {
         switch (op) {
             case INSTALL:
-                this.getLog().info(String.format(INSTALL_MSG, dto.getBundleName(), dto.getBsn(), dto.getBundleVersion()));
+                this.getLog().info("Installing " + dto);
                 break;
             case UNINSTALL:
-                this.getLog().info(String.format(UNINSTALL_MSG, dto.getBundleName(), dto.getBsn(), dto.getBundleVersion()));
+                this.getLog().info("Uninstalling " + dto);
                 break;
         }
     }
 
     BundleDTO getBundleDTO(File bundle) throws IOException {
-        try (JarFile jarFile = new JarFile(bundle)) {
-            Attributes mainAttributes = jarFile.getManifest().getMainAttributes();
+        try (JarFile bundleArchive = new JarFile(bundle)) {
+            Attributes mainAttributes = bundleArchive.getManifest().getMainAttributes();
             String bundleName = mainAttributes.getValue(BUNDLE_NAME);
             Validate.isTrue(StringUtils.isNotEmpty(bundleName), "Artifact is not a Bundle!!");
             String bsn = mainAttributes.getValue(BUNDLE_SYMBOLICNAME);
@@ -158,20 +161,20 @@ abstract class AbstractBundleMojo extends AbstractMojo {
                 for (String part : header.getValue().split(REGEX_SEMI_COLON)) {
                     if (part.startsWith(HEADER_JSESSIONID)) {
                         sessionId = part.split(REGEX_EQ)[1];
-                        this.getLog().info("AdeptJ Session id from SET-COOKIE header: " + sessionId);
+                        this.getLog().info("AdeptJ SessionId from [SET-COOKIE] header: " + sessionId);
                         break;
                     }
                 }
             } else if (HEADER_JSESSIONID.equals(headerName)) {
                 sessionId = header.getValue();
-                this.getLog().info("AdeptJ Session id from JSESSIONID header: " + sessionId);
+                this.getLog().info("AdeptJ SessionId from [JSESSIONID] header: " + sessionId);
                 break;
             }
         }
-        boolean loginSucceeded = StringUtils.isNotEmpty(sessionId);
-        if (loginSucceeded) {
+        if (StringUtils.isNotEmpty(sessionId)) {
+            this.loginSucceeded = true;
             this.getLog().info("Login succeeded!!");
         }
-        return loginSucceeded;
+        return this.loginSucceeded;
     }
 }
