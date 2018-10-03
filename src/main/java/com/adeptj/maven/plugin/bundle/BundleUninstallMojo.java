@@ -36,7 +36,7 @@ import static com.adeptj.maven.plugin.bundle.Constants.URL_UNINSTALL;
 import static org.apache.http.HttpStatus.SC_OK;
 
 /**
- * Uninstall an OSGi bundle from a running AdeptJ Runtime instance.
+ * Mojo for uninstall an OSGi bundle from a running AdeptJ Runtime instance.
  *
  * @author Rakesh.Kumar, AdeptJ
  */
