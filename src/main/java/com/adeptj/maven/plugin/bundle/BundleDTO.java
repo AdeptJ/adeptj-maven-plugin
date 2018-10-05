@@ -40,15 +40,15 @@ class BundleDTO {
     }
 
     String getBundleName() {
-        return bundleName;
+        return this.bundleName;
     }
 
     String getBsn() {
-        return bsn;
+        return this.bsn;
     }
 
     String getBundleVersion() {
-        return bundleVersion;
+        return this.bundleVersion;
     }
 
     @Override
