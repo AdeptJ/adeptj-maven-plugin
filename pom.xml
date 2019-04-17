@@ -21,6 +21,12 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.adeptj</groupId>
+        <artifactId>adeptj-parent</artifactId>
+        <version>7</version>
+        <relativePath/>
+    </parent>
     <groupId>com.adeptj</groupId>
     <artifactId>adeptj-maven-plugin</artifactId>
     <version>1.1.0.Final</version>
@@ -38,11 +44,8 @@
         <maven.compiler.target>1.8</maven.compiler.target>
         <maven.compiler.source>1.8</maven.compiler.source>
         <jdk.version>1.8</jdk.version>
-        <commons-codec.version>1.12</commons-codec.version>
-        <commons-io.version>2.6</commons-io.version>
-        <commons-lang.version>3.8.1</commons-lang.version>
-        <commons-logging.version>1.2</commons-logging.version>
-        <maven-plugin-api.version>3.6.0</maven-plugin-api.version>
+        <maven-plugin-plugin.version>3.6.0</maven-plugin-plugin.version>
+        <maven-plugin-api.version>3.6.1</maven-plugin-api.version>
         <maven-plugin-annotations.version>3.6.0</maven-plugin-annotations.version>
     </properties>
 
@@ -115,6 +118,12 @@
                     <target>${maven.compiler.target}</target>
                 </configuration>
             </plugin>
+            
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-plugin-plugin</artifactId>
+                <version>${maven-plugin-plugin.version}</version>
+            </plugin>
 
         </plugins>
 
@@ -134,7 +143,7 @@
             <version>${maven-plugin-annotations.version}</version>
         </dependency>
 
-        <!-- ShrinkWrap -->
+        <!-- ShrinkWrap Starts-->
 
         <dependency>
             <groupId>org.jboss.shrinkwrap.resolver</groupId>
@@ -171,29 +180,31 @@
             <artifactId>shrinkwrap-resolver-impl-maven-archive</artifactId>
             <version>${shrinkwrap.version}</version>
         </dependency>
+
+        <!-- ShrinkWrap Ends-->
         
         <dependency>
             <groupId>commons-codec</groupId>
             <artifactId>commons-codec</artifactId>
-            <version>${commons-codec.version}</version>
+            <scope>compile</scope>
         </dependency>
 
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
-            <version>${commons-io.version}</version>
+            <scope>compile</scope>
         </dependency>
 
         <dependency>
             <groupId>commons-logging</groupId>
             <artifactId>commons-logging</artifactId>
-            <version>${commons-logging.version}</version>
+            <scope>compile</scope>
         </dependency>
 
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
-            <version>${commons-lang.version}</version>
+            <scope>compile</scope>
         </dependency>
 
         <dependency>
