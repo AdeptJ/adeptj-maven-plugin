@@ -95,9 +95,9 @@ abstract class AbstractBundleMojo extends AbstractMojo {
             String sessionId = null;
             for (Header header : authResponse.getAllHeaders()) {
                 if (StringUtils.equals(HEADER_SET_COOKIE, header.getName())) {
-                    for (String part : header.getValue().split(REGEX_SEMI_COLON)) {
-                        if (StringUtils.startsWith(part, HEADER_JSESSIONID)) {
-                            sessionId = part.split(REGEX_EQ)[1];
+                    for (String token : header.getValue().split(REGEX_SEMI_COLON)) {
+                        if (StringUtils.startsWith(token, HEADER_JSESSIONID)) {
+                            sessionId = token.split(REGEX_EQ)[1];
                             this.getLog().debug("Retrieved AdeptJ SessionId from [SET-COOKIE] header: " + sessionId);
                             break;
                         }
@@ -157,10 +157,10 @@ abstract class AbstractBundleMojo extends AbstractMojo {
             Attributes mainAttributes = bundleArchive.getManifest().getMainAttributes();
             String bundleName = mainAttributes.getValue(BUNDLE_NAME);
             Validate.isTrue(StringUtils.isNotEmpty(bundleName), "Artifact is not a Bundle!!");
-            String bsn = mainAttributes.getValue(BUNDLE_SYMBOLIC_NAME);
-            Validate.isTrue(StringUtils.isNotEmpty(bsn), "Bundle symbolic name is blank!!");
+            String symbolicName = mainAttributes.getValue(BUNDLE_SYMBOLIC_NAME);
+            Validate.isTrue(StringUtils.isNotEmpty(symbolicName), "Bundle symbolic name is blank!!");
             String bundleVersion = mainAttributes.getValue(BUNDLE_VERSION);
-            return new BundleDTO(bundleName, bsn, bundleVersion);
+            return new BundleDTO(bundleName, symbolicName, bundleVersion);
         }
     }
 }
