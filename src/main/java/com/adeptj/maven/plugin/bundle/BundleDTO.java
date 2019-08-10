@@ -29,13 +29,13 @@ class BundleDTO {
 
     private final String bundleName;
 
-    private final String bsn;
+    private final String symbolicName;
 
     private final String bundleVersion;
 
-    BundleDTO(String bundleName, String bsn, String bundleVersion) {
+    BundleDTO(String bundleName, String symbolicName, String bundleVersion) {
         this.bundleName = bundleName;
-        this.bsn = bsn;
+        this.symbolicName = symbolicName;
         this.bundleVersion = bundleVersion;
     }
 
@@ -43,8 +43,8 @@ class BundleDTO {
         return this.bundleName;
     }
 
-    String getBsn() {
-        return this.bsn;
+    String getSymbolicName() {
+        return this.symbolicName;
     }
 
     String getBundleVersion() {
@@ -53,6 +53,6 @@ class BundleDTO {
 
     @Override
     public String toString() {
-        return "Bundle [" + this.bundleName + " (" + this.bsn + ")," + " version: " + this.bundleVersion + "]";
+        return "Bundle [" + this.bundleName + " (" + this.symbolicName + ")," + " version: " + this.bundleVersion + "]";
     }
 }

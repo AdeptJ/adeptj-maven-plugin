@@ -64,7 +64,7 @@ public class BundleUninstallMojo extends AbstractBundleMojo {
             // First login, then while installing bundle, HttpClient will pass the JSESSIONID received
             // in the Set-Cookie header in the auth call. if authentication fails, discontinue the further execution.
             if (this.login()) {
-                HttpUriRequest request = RequestBuilder.post(this.adeptjConsoleURL + String.format(URL_UNINSTALL, dto.getBsn()))
+                HttpUriRequest request = RequestBuilder.post(this.adeptjConsoleURL + String.format(URL_UNINSTALL, dto.getSymbolicName()))
                         .addParameter(PARAM_ACTION, PARAM_ACTION_UNINSTALL_VALUE)
                         .setCharset(UTF_8)
                         .build();
