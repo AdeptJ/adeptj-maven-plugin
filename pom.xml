@@ -21,12 +21,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <parent>
-        <groupId>com.adeptj</groupId>
-        <artifactId>adeptj-parent</artifactId>
-        <version>8</version>
-        <relativePath/>
-    </parent>
+    <groupId>com.adeptj</groupId>
     <artifactId>adeptj-maven-plugin</artifactId>
     <version>1.1.1.Final</version>
     <packaging>maven-plugin</packaging>
@@ -38,6 +33,10 @@
         <httpcore.version>4.4.13</httpcore.version>
         <httpclient.version>4.5.12</httpclient.version>
         <httpmime.version>4.5.12</httpmime.version>
+        <commons-io.version>2.6</commons-io.version>
+        <commons-lang.version>3.10</commons-lang.version>
+        <commons-codec.version>1.14</commons-codec.version>
+        <commons-logging.version>1.2</commons-logging.version>
         <shrinkwrap.version>3.1.4</shrinkwrap.version>
         <maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
         <maven-plugin-plugin.version>3.6.0</maven-plugin-plugin.version>
@@ -109,7 +108,6 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>${maven-compiler-plugin.version}</version>
                 <configuration>
-                    <compilerArgument>-parameters</compilerArgument>
                     <release>11</release>
                 </configuration>
             </plugin>
@@ -181,24 +179,28 @@
         <dependency>
             <groupId>commons-codec</groupId>
             <artifactId>commons-codec</artifactId>
+            <version>${commons-codec.version}</version>
             <scope>compile</scope>
         </dependency>
 
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
+            <version>${commons-io.version}</version>
             <scope>compile</scope>
         </dependency>
 
         <dependency>
             <groupId>commons-logging</groupId>
             <artifactId>commons-logging</artifactId>
+            <version>${commons-logging.version}</version>
             <scope>compile</scope>
         </dependency>
 
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
+            <version>${commons-lang.version}</version>
             <scope>compile</scope>
         </dependency>
 
