@@ -27,6 +27,8 @@
     <packaging>maven-plugin</packaging>
     <name>AdeptJ :: Maven Plugin</name>
     <description>AdeptJ Maven Plugin for Supporting Bundle Development</description>
+    <url>http://www.adeptj.com</url>
+    <inceptionYear>2016</inceptionYear>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
