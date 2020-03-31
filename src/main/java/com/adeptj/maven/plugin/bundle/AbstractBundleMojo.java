@@ -111,6 +111,7 @@ abstract class AbstractBundleMojo extends AbstractMojo {
             }
         } catch (Exception ex) {
             this.getLog().error(ex);
+            throw new BundleMojoException(ex);
         }
         return this.loginSucceeded;
     }
