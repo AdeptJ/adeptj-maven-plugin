@@ -22,12 +22,14 @@ package com.adeptj.maven.plugin.bundle;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
-import org.apache.http.Header;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpUriRequest;
-import org.apache.http.client.methods.RequestBuilder;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
+import org.apache.hc.client5.http.impl.classic.HttpClients;
+import org.apache.hc.core5.http.ClassicHttpRequest;
+import org.apache.hc.core5.http.ClassicHttpResponse;
+import org.apache.hc.core5.http.Header;
+import org.apache.hc.core5.http.HttpStatus;
+import org.apache.hc.core5.http.io.support.ClassicRequestBuilder;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugins.annotations.Parameter;
 
@@ -50,7 +52,6 @@ import static com.adeptj.maven.plugin.bundle.Constants.REGEX_EQ;
 import static com.adeptj.maven.plugin.bundle.Constants.REGEX_SEMI_COLON;
 import static com.adeptj.maven.plugin.bundle.Constants.VALUE_TRUE;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.apache.http.HttpStatus.SC_OK;
 
 /**
  * Base for various bundle mojo implementations.
@@ -86,14 +87,14 @@ abstract class AbstractBundleMojo extends AbstractMojo {
             this.httpClient = HttpClients.createDefault();
             this.getLog().debug("HttpClient initialized!!");
         }
-        HttpUriRequest request = RequestBuilder.post(this.authUrl)
+        ClassicHttpRequest request = ClassicRequestBuilder.post(this.authUrl)
                 .addParameter(J_USERNAME, this.user)
                 .addParameter(J_PASSWORD, this.password)
                 .setCharset(UTF_8)
                 .build();
         try (CloseableHttpResponse authResponse = this.httpClient.execute(request)) {
             String sessionId = null;
-            for (Header header : authResponse.getAllHeaders()) {
+            for (Header header : authResponse.getHeaders()) {
                 if (StringUtils.equals(HEADER_SET_COOKIE, header.getName())) {
                     for (String token : header.getValue().split(REGEX_SEMI_COLON)) {
                         if (StringUtils.startsWith(token, HEADER_JSESSIONID)) {
@@ -119,8 +120,8 @@ abstract class AbstractBundleMojo extends AbstractMojo {
     void logout() {
         if (this.loginSucceeded) {
             this.getLog().debug("Invoking Logout!!");
-            try (CloseableHttpResponse response = this.httpClient.execute(RequestBuilder.get(this.logoutUrl).build())) {
-                if (response.getStatusLine().getStatusCode() == SC_OK) {
+            try (ClassicHttpResponse response = this.httpClient.execute(ClassicRequestBuilder.get(this.logoutUrl).build())) {
+                if (response.getCode() == HttpStatus.SC_OK) {
                     this.getLog().debug("Logout successful!!");
                 } else {
                     this.getLog().debug("Logout failed!!");

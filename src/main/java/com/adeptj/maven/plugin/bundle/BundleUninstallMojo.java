@@ -20,9 +20,9 @@
 
 package com.adeptj.maven.plugin.bundle;
 
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpUriRequest;
-import org.apache.http.client.methods.RequestBuilder;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
+import org.apache.hc.core5.http.ClassicHttpRequest;
+import org.apache.hc.core5.http.io.support.ClassicRequestBuilder;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugins.annotations.Mojo;
@@ -35,7 +35,7 @@ import static com.adeptj.maven.plugin.bundle.Constants.PARAM_ACTION;
 import static com.adeptj.maven.plugin.bundle.Constants.PARAM_ACTION_UNINSTALL_VALUE;
 import static com.adeptj.maven.plugin.bundle.Constants.URL_UNINSTALL;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.apache.http.HttpStatus.SC_OK;
+import static org.apache.hc.core5.http.HttpStatus.SC_OK;
 
 /**
  * Mojo for uninstall an OSGi bundle from a running AdeptJ Runtime instance.
@@ -48,7 +48,7 @@ public class BundleUninstallMojo extends AbstractBundleMojo {
     static final String MOJO_NAME = "uninstall";
 
     @Parameter(
-            property = "adeptj.file",
+            property = "adeptj.bundle.file",
             defaultValue = "${project.build.directory}/${project.build.finalName}.jar"
     )
     private String bundleFileName;
@@ -64,12 +64,12 @@ public class BundleUninstallMojo extends AbstractBundleMojo {
             // First login, then while installing bundle, HttpClient will pass the JSESSIONID received
             // in the Set-Cookie header in the auth call. if authentication fails, discontinue the further execution.
             if (this.login()) {
-                HttpUriRequest request = RequestBuilder.post(this.adeptjConsoleURL + String.format(URL_UNINSTALL, dto.getSymbolicName()))
+                ClassicHttpRequest request = ClassicRequestBuilder.post(this.adeptjConsoleURL + String.format(URL_UNINSTALL, dto.getSymbolicName()))
                         .addParameter(PARAM_ACTION, PARAM_ACTION_UNINSTALL_VALUE)
                         .setCharset(UTF_8)
                         .build();
                 try (CloseableHttpResponse uninstallResponse = this.httpClient.execute(request)) {
-                    int status = uninstallResponse.getStatusLine().getStatusCode();
+                    int status = uninstallResponse.getCode();
                     if (status == SC_OK) {
                         log.info("Bundle uninstalled successfully, please check AdeptJ OSGi Web Console"
                                 + " [" + this.adeptjConsoleURL + "]");
@@ -77,7 +77,7 @@ public class BundleUninstallMojo extends AbstractBundleMojo {
                         if (this.failOnError) {
                             throw new MojoExecutionException(
                                     String.format("Couldn't uninstall bundle , reason: [%s], status: [%s]",
-                                            uninstallResponse.getStatusLine().getReasonPhrase(),
+                                            uninstallResponse.getReasonPhrase(),
                                             status));
                         }
                         log.error("Problem uninstalling bundle, please check AdeptJ OSGi Web Console!!");

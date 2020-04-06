@@ -20,14 +20,15 @@
 
 package com.adeptj.maven.plugin.bundle;
 
-import org.apache.http.HttpEntity;
-import org.apache.http.entity.mime.MultipartEntityBuilder;
+import org.apache.hc.client5.http.entity.mime.MultipartEntityBuilder;
+import org.apache.hc.core5.http.HttpEntity;
 
 import java.io.File;
 
 import static com.adeptj.maven.plugin.bundle.Constants.PARAM_ACTION;
 import static com.adeptj.maven.plugin.bundle.Constants.PARAM_ACTION_INSTALL_VALUE;
 import static com.adeptj.maven.plugin.bundle.Constants.PARAM_BUNDLE_FILE;
+import static com.adeptj.maven.plugin.bundle.Constants.PARAM_PARALLEL_VERSION;
 import static com.adeptj.maven.plugin.bundle.Constants.PARAM_REFRESH_PACKAGES;
 import static com.adeptj.maven.plugin.bundle.Constants.PARAM_START;
 import static com.adeptj.maven.plugin.bundle.Constants.PARAM_START_LEVEL;
@@ -43,7 +44,8 @@ final class BundleMojoUtil {
     private BundleMojoUtil() {
     }
 
-    static HttpEntity multipartEntity(File bundle, String bundleStartLevel, boolean bundleStart, boolean refreshPackages) {
+    static HttpEntity multipartEntity(File bundle, String bundleStartLevel, boolean bundleStart,
+                                      boolean refreshPackages, boolean parallelVersion) {
         MultipartEntityBuilder multipartEntityBuilder = MultipartEntityBuilder.create()
                 .addBinaryBody(PARAM_BUNDLE_FILE, bundle)
                 .addTextBody(PARAM_ACTION, PARAM_ACTION_INSTALL_VALUE)
@@ -53,6 +55,10 @@ final class BundleMojoUtil {
         }
         if (refreshPackages) {
             multipartEntityBuilder.addTextBody(PARAM_REFRESH_PACKAGES, VALUE_TRUE);
+        }
+        // Since web console v4.4.0
+        if (parallelVersion) {
+            multipartEntityBuilder.addTextBody(PARAM_PARALLEL_VERSION, VALUE_TRUE);
         }
         return multipartEntityBuilder.build();
     }

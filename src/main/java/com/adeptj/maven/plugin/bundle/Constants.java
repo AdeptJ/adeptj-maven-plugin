@@ -38,7 +38,7 @@ public final class Constants {
 
     static final String DEFAULT_AUTH_URL = "http://localhost:9007/auth/j_security_check";
 
-    static final String DEFAULT_LOGOUT_URL = "http://localhost:9007/tools/logout";
+    static final String DEFAULT_LOGOUT_URL = "http://localhost:9007/admin/logout";
 
     static final String DEFAULT_CONSOLE_URL = "http://localhost:9007/system/console";
 
@@ -60,6 +60,8 @@ public final class Constants {
 
     static final String PARAM_REFRESH_PACKAGES = "refreshPackages";
 
+    static final String PARAM_PARALLEL_VERSION = "parallelVersion";
+
     static final String PARAM_ACTION = "action";
 
     static final String PARAM_ACTION_INSTALL_VALUE = "install";
@@ -67,6 +69,8 @@ public final class Constants {
     static final String PARAM_ACTION_UNINSTALL_VALUE = "uninstall";
 
     static final String VALUE_TRUE = "true";
+
+    static final String VALUE_FALSE = "false";
 
     static final String BUNDLE_NAME = "Bundle-Name";
 

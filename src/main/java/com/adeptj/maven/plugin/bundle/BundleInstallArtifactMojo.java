@@ -20,9 +20,10 @@
 
 package com.adeptj.maven.plugin.bundle;
 
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpUriRequest;
-import org.apache.http.client.methods.RequestBuilder;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
+import org.apache.hc.core5.http.ClassicHttpRequest;
+import org.apache.hc.core5.http.HttpEntity;
+import org.apache.hc.core5.http.io.support.ClassicRequestBuilder;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugins.annotations.Mojo;
@@ -33,9 +34,10 @@ import java.io.File;
 
 import static com.adeptj.maven.plugin.bundle.BundleInstallArtifactMojo.MOJO_NAME;
 import static com.adeptj.maven.plugin.bundle.Constants.URL_INSTALL;
+import static com.adeptj.maven.plugin.bundle.Constants.VALUE_FALSE;
 import static com.adeptj.maven.plugin.bundle.Constants.VALUE_TRUE;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.apache.http.HttpStatus.SC_OK;
+import static org.apache.hc.core5.http.HttpStatus.SC_OK;
 
 /**
  * Install an OSGi bundle from maven repository to a running AdeptJ Runtime instance.
@@ -47,13 +49,13 @@ public class BundleInstallArtifactMojo extends AbstractBundleMojo {
 
     private static final String GAV_FMT = "%s:%s:%s";
 
-    @Parameter(property = "adeptj.groupId")
+    @Parameter(property = "adeptj.artifact.groupId")
     private String groupId;
 
-    @Parameter(property = "adeptj.artifactId")
+    @Parameter(property = "adeptj.artifact.artifactId")
     private String artifactId;
 
-    @Parameter(property = "adeptj.version")
+    @Parameter(property = "adeptj.artifact.version")
     private String version;
 
     @Parameter(property = "adeptj.bundle.startlevel", defaultValue = "20", required = true)
@@ -62,8 +64,11 @@ public class BundleInstallArtifactMojo extends AbstractBundleMojo {
     @Parameter(property = "adeptj.bundle.start", defaultValue = VALUE_TRUE, required = true)
     private boolean bundleStart;
 
-    @Parameter(property = "adeptj.refreshPackages", defaultValue = VALUE_TRUE, required = true)
+    @Parameter(property = "adeptj.bundle.refreshPackages", defaultValue = VALUE_TRUE, required = true)
     private boolean refreshPackages;
+
+    @Parameter(property = "adeptj.bundle.parallelVersion", defaultValue = VALUE_FALSE)
+    private boolean parallelVersion;
 
     @Override
     public void execute() throws MojoExecutionException {
@@ -78,12 +83,14 @@ public class BundleInstallArtifactMojo extends AbstractBundleMojo {
             // First login, then while installing bundle, HttpClient will pass the JSESSIONID received
             // in the Set-Cookie header in the auth call. if authentication fails, discontinue the further execution.
             if (this.login()) {
-                HttpUriRequest request = RequestBuilder.post(this.adeptjConsoleURL + URL_INSTALL)
-                        .setEntity(BundleMojoUtil.multipartEntity(bundle, this.bundleStartLevel, this.bundleStart, this.refreshPackages))
+                HttpEntity entity = BundleMojoUtil.multipartEntity(bundle, this.bundleStartLevel, this.bundleStart,
+                        this.refreshPackages, this.parallelVersion);
+                ClassicHttpRequest request = ClassicRequestBuilder.post(this.adeptjConsoleURL + URL_INSTALL)
+                        .setEntity(entity)
                         .setCharset(UTF_8)
                         .build();
                 try (CloseableHttpResponse installResponse = this.httpClient.execute(request)) {
-                    int status = installResponse.getStatusLine().getStatusCode();
+                    int status = installResponse.getCode();
                     if (status == SC_OK) {
                         log.info("Bundle installed successfully, please check AdeptJ OSGi Web Console"
                                 + " [" + this.adeptjConsoleURL + "]");
@@ -91,7 +98,7 @@ public class BundleInstallArtifactMojo extends AbstractBundleMojo {
                         if (this.failOnError) {
                             throw new MojoExecutionException(
                                     String.format("Bundle installation failed, reason: [%s], status: [%s]",
-                                            installResponse.getStatusLine().getReasonPhrase(),
+                                            installResponse.getReasonPhrase(),
                                             status));
                         }
                         log.warn("Problem installing bundle, please check AdeptJ OSGi Web Console!!");
