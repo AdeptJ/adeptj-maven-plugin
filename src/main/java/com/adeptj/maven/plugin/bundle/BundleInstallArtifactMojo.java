@@ -33,6 +33,7 @@ import org.jboss.shrinkwrap.resolver.api.maven.Maven;
 import java.io.File;
 
 import static com.adeptj.maven.plugin.bundle.BundleInstallArtifactMojo.MOJO_NAME;
+import static com.adeptj.maven.plugin.bundle.BundleMojoOp.INSTALL;
 import static com.adeptj.maven.plugin.bundle.Constants.URL_INSTALL;
 import static com.adeptj.maven.plugin.bundle.Constants.VALUE_FALSE;
 import static com.adeptj.maven.plugin.bundle.Constants.VALUE_TRUE;
@@ -79,11 +80,11 @@ public class BundleInstallArtifactMojo extends AbstractBundleMojo {
                 .asSingleFile();
         try {
             BundleDTO dto = this.getBundleDTO(bundle);
-            this.logBundleDetails(dto, BundleMojoOp.INSTALL);
+            this.logBundleDetails(dto, INSTALL);
             // First login, then while installing bundle, HttpClient will pass the JSESSIONID received
             // in the Set-Cookie header in the auth call. if authentication fails, discontinue the further execution.
             if (this.login()) {
-                HttpEntity entity = BundleMojoUtil.multipartEntity(bundle, this.bundleStartLevel, this.bundleStart,
+                HttpEntity entity = BundleMojoUtil.newMultipartEntity(bundle, this.bundleStartLevel, this.bundleStart,
                         this.refreshPackages, this.parallelVersion);
                 ClassicHttpRequest request = ClassicRequestBuilder.post(this.adeptjConsoleURL + URL_INSTALL)
                         .setEntity(entity)

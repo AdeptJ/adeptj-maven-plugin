@@ -52,6 +52,7 @@ import static com.adeptj.maven.plugin.bundle.Constants.REGEX_EQ;
 import static com.adeptj.maven.plugin.bundle.Constants.REGEX_SEMI_COLON;
 import static com.adeptj.maven.plugin.bundle.Constants.VALUE_TRUE;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.apache.hc.core5.http.HttpStatus.SC_OK;
 
 /**
  * Base for various bundle mojo implementations.
@@ -121,7 +122,7 @@ abstract class AbstractBundleMojo extends AbstractMojo {
         if (this.loginSucceeded) {
             this.getLog().debug("Invoking Logout!!");
             try (ClassicHttpResponse response = this.httpClient.execute(ClassicRequestBuilder.get(this.logoutUrl).build())) {
-                if (response.getCode() == HttpStatus.SC_OK) {
+                if (response.getCode() == SC_OK) {
                     this.getLog().debug("Logout successful!!");
                 } else {
                     this.getLog().debug("Logout failed!!");

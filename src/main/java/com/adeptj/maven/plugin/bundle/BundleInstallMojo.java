@@ -78,7 +78,7 @@ public class BundleInstallMojo extends AbstractBundleMojo {
             // First login, then while installing bundle, HttpClient will pass the JSESSIONID received
             // in the Set-Cookie header in the auth call. if authentication fails, discontinue the further execution.
             if (this.login()) {
-                HttpEntity entity = BundleMojoUtil.multipartEntity(bundle, this.bundleStartLevel, this.bundleStart,
+                HttpEntity entity = BundleMojoUtil.newMultipartEntity(bundle, this.bundleStartLevel, this.bundleStart,
                         this.refreshPackages, this.parallelVersion);
                 ClassicHttpRequest request = ClassicRequestBuilder.post(this.adeptjConsoleURL + URL_INSTALL)
                         .setEntity(entity)

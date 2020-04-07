@@ -30,6 +30,7 @@ import org.apache.maven.plugins.annotations.Parameter;
 
 import java.io.File;
 
+import static com.adeptj.maven.plugin.bundle.BundleMojoOp.UNINSTALL;
 import static com.adeptj.maven.plugin.bundle.BundleUninstallMojo.MOJO_NAME;
 import static com.adeptj.maven.plugin.bundle.Constants.PARAM_ACTION;
 import static com.adeptj.maven.plugin.bundle.Constants.PARAM_ACTION_UNINSTALL_VALUE;
@@ -60,7 +61,7 @@ public class BundleUninstallMojo extends AbstractBundleMojo {
         File bundle = new File(this.bundleFileName);
         try {
             BundleDTO dto = this.getBundleDTO(bundle);
-            this.logBundleDetails(dto, BundleMojoOp.UNINSTALL);
+            this.logBundleDetails(dto, UNINSTALL);
             // First login, then while installing bundle, HttpClient will pass the JSESSIONID received
             // in the Set-Cookie header in the auth call. if authentication fails, discontinue the further execution.
             if (this.login()) {

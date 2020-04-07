@@ -44,8 +44,8 @@ final class BundleMojoUtil {
     private BundleMojoUtil() {
     }
 
-    static HttpEntity multipartEntity(File bundle, String bundleStartLevel, boolean bundleStart,
-                                      boolean refreshPackages, boolean parallelVersion) {
+    static HttpEntity newMultipartEntity(File bundle, String bundleStartLevel, boolean bundleStart,
+                                         boolean refreshPackages, boolean parallelVersion) {
         MultipartEntityBuilder multipartEntityBuilder = MultipartEntityBuilder.create()
                 .addBinaryBody(PARAM_BUNDLE_FILE, bundle)
                 .addTextBody(PARAM_ACTION, PARAM_ACTION_INSTALL_VALUE)
