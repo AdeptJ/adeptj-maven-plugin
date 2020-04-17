@@ -92,9 +92,8 @@ final class BundleMojoUtil {
         }
         String boundary = UUID.randomUUID().toString();
         List<byte[]> byteArrays = new ArrayList<>();
-        byte[] separator = ("--" + boundary + "\r\nContent-Disposition: form-data; name=").getBytes(UTF_8);
         for (Map.Entry<String, Object> entry : data.entrySet()) {
-            byteArrays.add(separator);
+            byteArrays.add(("--" + boundary + "\r\nContent-Disposition: form-data; name=").getBytes(UTF_8));
             if (entry.getValue() instanceof Path) {
                 Path path = (Path) entry.getValue();
                 byteArrays.add(("\"" + entry.getKey() + "\"; filename=\"" + path.getFileName()
