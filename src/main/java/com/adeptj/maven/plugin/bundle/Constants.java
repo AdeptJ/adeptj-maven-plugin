@@ -36,11 +36,11 @@ public final class Constants {
 
     static final String HEADER_JSESSIONID = "JSESSIONID";
 
-    static final String DEFAULT_AUTH_URL = "http://localhost:9007/auth/j_security_check";
+    static final String DEFAULT_AUTH_URL = "http://localhost:8080/admin/auth/j_security_check";
 
-    static final String DEFAULT_LOGOUT_URL = "http://localhost:9007/admin/logout";
+    static final String DEFAULT_LOGOUT_URL = "http://localhost:8080/admin/logout";
 
-    static final String DEFAULT_CONSOLE_URL = "http://localhost:9007/system/console";
+    static final String DEFAULT_CONSOLE_URL = "http://localhost:8080/system/console";
 
     static final String URL_INSTALL = "/install";
 

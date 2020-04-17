@@ -22,19 +22,18 @@ package com.adeptj.maven.plugin.bundle;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
-import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
-import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
-import org.apache.hc.client5.http.impl.classic.HttpClients;
-import org.apache.hc.core5.http.ClassicHttpRequest;
-import org.apache.hc.core5.http.ClassicHttpResponse;
-import org.apache.hc.core5.http.Header;
-import org.apache.hc.core5.http.HttpStatus;
-import org.apache.hc.core5.http.io.support.ClassicRequestBuilder;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugins.annotations.Parameter;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.CookieManager;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.jar.Attributes;
 import java.util.jar.JarFile;
 
@@ -51,8 +50,6 @@ import static com.adeptj.maven.plugin.bundle.Constants.J_USERNAME;
 import static com.adeptj.maven.plugin.bundle.Constants.REGEX_EQ;
 import static com.adeptj.maven.plugin.bundle.Constants.REGEX_SEMI_COLON;
 import static com.adeptj.maven.plugin.bundle.Constants.VALUE_TRUE;
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.apache.hc.core5.http.HttpStatus.SC_OK;
 
 /**
  * Base for various bundle mojo implementations.
@@ -81,34 +78,44 @@ abstract class AbstractBundleMojo extends AbstractMojo {
 
     private boolean loginSucceeded;
 
-    CloseableHttpClient httpClient;
+    final HttpClient httpClient;
+
+    public AbstractBundleMojo() {
+        this.httpClient = HttpClient.newBuilder()
+                .cookieHandler(new CookieManager())
+                .followRedirects(HttpClient.Redirect.NORMAL)
+                .version(HttpClient.Version.HTTP_2)
+                .build();
+        this.getLog().debug("JDK HttpClient initialized!!");
+    }
 
     boolean login() {
-        if (this.httpClient == null) {
-            this.httpClient = HttpClients.createDefault();
-            this.getLog().debug("HttpClient initialized!!");
-        }
-        ClassicHttpRequest request = ClassicRequestBuilder.post(this.authUrl)
-                .addParameter(J_USERNAME, this.user)
-                .addParameter(J_PASSWORD, this.password)
-                .setCharset(UTF_8)
+        Map<String, Object> data = new HashMap<>();
+        data.put(J_USERNAME, this.user);
+        data.put(J_PASSWORD, this.password);
+        getLog().info(data.toString());
+        HttpRequest loginRequest = HttpRequest.newBuilder()
+                .POST(BundleMojoUtil.ofFormData(data))
+                .uri(URI.create(this.authUrl))
+                .header("Content-Type", "application/x-www-form-urlencoded")
                 .build();
-        try (CloseableHttpResponse authResponse = this.httpClient.execute(request)) {
+        try {
+            HttpResponse<String> httpResponse = this.httpClient.send(loginRequest, HttpResponse.BodyHandlers.ofString());
+            System.out.println(httpResponse.headers().allValues(HEADER_SET_COOKIE));
+            getLog().info(httpResponse.body());
             String sessionId = null;
-            for (Header header : authResponse.getHeaders()) {
-                if (StringUtils.equals(HEADER_SET_COOKIE, header.getName())) {
-                    for (String token : header.getValue().split(REGEX_SEMI_COLON)) {
-                        if (StringUtils.startsWith(token, HEADER_JSESSIONID)) {
-                            sessionId = token.split(REGEX_EQ)[1];
-                            this.getLog().debug("Retrieved AdeptJ SessionId from [SET-COOKIE] header: " + sessionId);
-                            break;
-                        }
-                    }
-                    if (StringUtils.isNotEmpty(sessionId)) {
-                        this.loginSucceeded = true;
-                        this.getLog().debug("Login succeeded!!");
+            for (String header : httpResponse.headers().allValues(HEADER_SET_COOKIE)) {
+                for (String token : header.split(REGEX_SEMI_COLON)) {
+                    if (StringUtils.startsWith(token, HEADER_JSESSIONID)) {
+                        sessionId = token.split(REGEX_EQ)[1];
+                        this.getLog().info("Retrieved AdeptJ SessionId from [SET-COOKIE] header: " + sessionId);
                         break;
                     }
+                }
+                if (StringUtils.isNotEmpty(sessionId)) {
+                    this.loginSucceeded = true;
+                    this.getLog().info("Login succeeded!!");
+                    break;
                 }
             }
         } catch (Exception ex) {
@@ -120,25 +127,19 @@ abstract class AbstractBundleMojo extends AbstractMojo {
 
     void logout() {
         if (this.loginSucceeded) {
-            this.getLog().debug("Invoking Logout!!");
-            try (ClassicHttpResponse response = this.httpClient.execute(ClassicRequestBuilder.get(this.logoutUrl).build())) {
-                if (response.getCode() == SC_OK) {
-                    this.getLog().debug("Logout successful!!");
-                } else {
-                    this.getLog().debug("Logout failed!!");
-                }
-            } catch (IOException ex) {
-                this.getLog().error(ex);
-            }
-        }
-    }
-
-    void closeHttpClient() {
-        if (this.httpClient != null) {
+            this.getLog().info("Invoking Logout!!");
+            HttpRequest logoutRequest = HttpRequest.newBuilder()
+                    .GET()
+                    .uri(URI.create(this.logoutUrl))
+                    .build();
             try {
-                this.httpClient.close();
-                this.getLog().debug("HttpClient closed!!");
-            } catch (IOException ex) {
+                HttpResponse<String> response = this.httpClient.send(logoutRequest, HttpResponse.BodyHandlers.ofString());
+                if (response.statusCode() == 200) {
+                    this.getLog().info("Logout successful!!");
+                } else {
+                    this.getLog().info("Logout failed!!");
+                }
+            } catch (IOException | InterruptedException ex) {
                 this.getLog().error(ex);
             }
         }

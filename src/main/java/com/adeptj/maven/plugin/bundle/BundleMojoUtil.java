@@ -20,19 +20,15 @@
 
 package com.adeptj.maven.plugin.bundle;
 
-import org.apache.hc.client5.http.entity.mime.MultipartEntityBuilder;
-import org.apache.hc.core5.http.HttpEntity;
+import java.io.IOException;
+import java.net.URLEncoder;
+import java.net.http.HttpRequest;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Map;
 
-import java.io.File;
-
-import static com.adeptj.maven.plugin.bundle.Constants.PARAM_ACTION;
-import static com.adeptj.maven.plugin.bundle.Constants.PARAM_ACTION_INSTALL_VALUE;
-import static com.adeptj.maven.plugin.bundle.Constants.PARAM_BUNDLE_FILE;
-import static com.adeptj.maven.plugin.bundle.Constants.PARAM_PARALLEL_VERSION;
-import static com.adeptj.maven.plugin.bundle.Constants.PARAM_REFRESH_PACKAGES;
-import static com.adeptj.maven.plugin.bundle.Constants.PARAM_START;
-import static com.adeptj.maven.plugin.bundle.Constants.PARAM_START_LEVEL;
-import static com.adeptj.maven.plugin.bundle.Constants.VALUE_TRUE;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Utility methods.
@@ -44,22 +40,38 @@ final class BundleMojoUtil {
     private BundleMojoUtil() {
     }
 
-    static HttpEntity newMultipartEntity(File bundle, String bundleStartLevel, boolean bundleStart,
-                                         boolean refreshPackages, boolean parallelVersion) {
-        MultipartEntityBuilder multipartEntityBuilder = MultipartEntityBuilder.create()
-                .addBinaryBody(PARAM_BUNDLE_FILE, bundle)
-                .addTextBody(PARAM_ACTION, PARAM_ACTION_INSTALL_VALUE)
-                .addTextBody(PARAM_START_LEVEL, bundleStartLevel);
-        if (bundleStart) {
-            multipartEntityBuilder.addTextBody(PARAM_START, VALUE_TRUE);
+    public static HttpRequest.BodyPublisher ofFormData(Map<String, Object> data) {
+        var builder = new StringBuilder();
+        for (Map.Entry<String, Object> entry : data.entrySet()) {
+            if (builder.length() > 0) {
+                builder.append("&");
+            }
+            builder.append(URLEncoder.encode(entry.getKey(), UTF_8))
+                    .append("=")
+                    .append(URLEncoder.encode(entry.getValue().toString(), UTF_8));
         }
-        if (refreshPackages) {
-            multipartEntityBuilder.addTextBody(PARAM_REFRESH_PACKAGES, VALUE_TRUE);
+        String body = builder.toString();
+        System.out.println(body);
+        return HttpRequest.BodyPublishers.ofString(body);
+    }
+
+    public static HttpRequest.BodyPublisher ofMimeMultipartData(Map<String, Object> data, String boundary) throws IOException {
+        var byteArrays = new ArrayList<byte[]>();
+        byte[] separator = ("--" + boundary + "\r\nContent-Disposition: form-data; name=").getBytes(UTF_8);
+        for (Map.Entry<String, Object> entry : data.entrySet()) {
+            byteArrays.add(separator);
+            if (entry.getValue() instanceof Path) {
+                var path = (Path) entry.getValue();
+                byteArrays.add(("\"" + entry.getKey() + "\"; filename=\"" + path.getFileName()
+                        + "\"\r\nContent-Type: " + Files.probeContentType(path) + "\r\n\r\n").getBytes(UTF_8));
+                byteArrays.add(Files.readAllBytes(path));
+                byteArrays.add("\r\n".getBytes(UTF_8));
+            } else {
+                byteArrays.add(("\"" + entry.getKey() + "\"\r\n\r\n" + entry.getValue() + "\r\n").getBytes(UTF_8));
+            }
         }
-        // Since web console v4.4.0
-        if (parallelVersion) {
-            multipartEntityBuilder.addTextBody(PARAM_PARALLEL_VERSION, VALUE_TRUE);
-        }
-        return multipartEntityBuilder.build();
+        byteArrays.add(("--" + boundary + "--").getBytes(UTF_8));
+        System.out.println(byteArrays);
+        return HttpRequest.BodyPublishers.ofByteArrays(byteArrays);
     }
 }

@@ -20,23 +20,23 @@
 
 package com.adeptj.maven.plugin.bundle;
 
-import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
-import org.apache.hc.core5.http.ClassicHttpRequest;
-import org.apache.hc.core5.http.io.support.ClassicRequestBuilder;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 
 import java.io.File;
+import java.net.URI;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.util.HashMap;
+import java.util.Map;
 
 import static com.adeptj.maven.plugin.bundle.BundleMojoOp.UNINSTALL;
 import static com.adeptj.maven.plugin.bundle.BundleUninstallMojo.MOJO_NAME;
 import static com.adeptj.maven.plugin.bundle.Constants.PARAM_ACTION;
 import static com.adeptj.maven.plugin.bundle.Constants.PARAM_ACTION_UNINSTALL_VALUE;
 import static com.adeptj.maven.plugin.bundle.Constants.URL_UNINSTALL;
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.apache.hc.core5.http.HttpStatus.SC_OK;
 
 /**
  * Mojo for uninstall an OSGi bundle from a running AdeptJ Runtime instance.
@@ -65,24 +65,27 @@ public class BundleUninstallMojo extends AbstractBundleMojo {
             // First login, then while installing bundle, HttpClient will pass the JSESSIONID received
             // in the Set-Cookie header in the auth call. if authentication fails, discontinue the further execution.
             if (this.login()) {
-                ClassicHttpRequest request = ClassicRequestBuilder.post(this.adeptjConsoleURL + String.format(URL_UNINSTALL, dto.getSymbolicName()))
-                        .addParameter(PARAM_ACTION, PARAM_ACTION_UNINSTALL_VALUE)
-                        .setCharset(UTF_8)
+                Map<String, Object> data = new HashMap<>();
+                data.put(PARAM_ACTION, PARAM_ACTION_UNINSTALL_VALUE);
+                HttpRequest request = HttpRequest.newBuilder()
+                        .POST(BundleMojoUtil.ofFormData(data))
+                        .uri(URI.create(this.adeptjConsoleURL + String.format(URL_UNINSTALL, dto.getSymbolicName())))
+                        .header("Content-Type", "application/x-www-form-urlencoded")
                         .build();
-                try (CloseableHttpResponse uninstallResponse = this.httpClient.execute(request)) {
-                    int status = uninstallResponse.getCode();
-                    if (status == SC_OK) {
-                        log.info("Bundle uninstalled successfully, please check AdeptJ OSGi Web Console"
-                                + " [" + this.adeptjConsoleURL + "]");
-                    } else {
-                        if (this.failOnError) {
-                            throw new MojoExecutionException(
-                                    String.format("Couldn't uninstall bundle , reason: [%s], status: [%s]",
-                                            uninstallResponse.getReasonPhrase(),
-                                            status));
-                        }
-                        log.error("Problem uninstalling bundle, please check AdeptJ OSGi Web Console!!");
+                getLog().info(request.toString());
+                HttpResponse<String> response = this.httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+                int status = response.statusCode();
+                if (status == 200) {
+                    log.info("Bundle uninstalled successfully, please check AdeptJ OSGi Web Console"
+                            + " [" + this.adeptjConsoleURL + "]");
+                } else {
+                    if (this.failOnError) {
+                        throw new MojoExecutionException(
+                                String.format("Couldn't uninstall bundle , reason: [%s], status: [%s]",
+                                        status,
+                                        status));
                     }
+                    log.error("Problem uninstalling bundle, please check AdeptJ OSGi Web Console!!");
                 }
             } else {
                 // means authentication was failed.
@@ -96,7 +99,6 @@ public class BundleUninstallMojo extends AbstractBundleMojo {
                     + ex.getMessage(), ex);
         } finally {
             this.logout();
-            this.closeHttpClient();
         }
     }
 }
