@@ -26,16 +26,17 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.HashMap;
 import java.util.Map;
 
 import static com.adeptj.maven.plugin.bundle.BundleMojoOp.UNINSTALL;
 import static com.adeptj.maven.plugin.bundle.BundleUninstallMojo.MOJO_NAME;
 import static com.adeptj.maven.plugin.bundle.Constants.PARAM_ACTION;
 import static com.adeptj.maven.plugin.bundle.Constants.PARAM_ACTION_UNINSTALL_VALUE;
+import static com.adeptj.maven.plugin.bundle.Constants.SC_OK;
 import static com.adeptj.maven.plugin.bundle.Constants.URL_UNINSTALL;
 
 /**
@@ -65,25 +66,16 @@ public class BundleUninstallMojo extends AbstractBundleMojo {
             // First login, then while installing bundle, HttpClient will pass the JSESSIONID received
             // in the Set-Cookie header in the auth call. if authentication fails, discontinue the further execution.
             if (this.login()) {
-                Map<String, Object> data = new HashMap<>();
-                data.put(PARAM_ACTION, PARAM_ACTION_UNINSTALL_VALUE);
-                HttpRequest request = HttpRequest.newBuilder()
-                        .POST(BundleMojoUtil.ofFormData(data))
-                        .uri(URI.create(this.adeptjConsoleURL + String.format(URL_UNINSTALL, dto.getSymbolicName())))
-                        .header("Content-Type", "application/x-www-form-urlencoded")
-                        .build();
-                getLog().info(request.toString());
-                HttpResponse<String> response = this.httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-                int status = response.statusCode();
-                if (status == 200) {
+                URI uri = URI.create(this.consoleUrl + String.format(URL_UNINSTALL, dto.getSymbolicName()));
+                Map<String, Object> data = Map.of(PARAM_ACTION, PARAM_ACTION_UNINSTALL_VALUE);
+                HttpRequest request = BundleMojoUtil.formUrlEncodedRequest(uri, data);
+                int status = this.httpClient.send(request, HttpResponse.BodyHandlers.discarding()).statusCode();
+                if (status == SC_OK) {
                     log.info("Bundle uninstalled successfully, please check AdeptJ OSGi Web Console"
-                            + " [" + this.adeptjConsoleURL + "]");
+                            + " [" + this.consoleUrl + "]");
                 } else {
                     if (this.failOnError) {
-                        throw new MojoExecutionException(
-                                String.format("Couldn't uninstall bundle , reason: [%s], status: [%s]",
-                                        status,
-                                        status));
+                        throw new MojoExecutionException(String.format("Couldn't uninstall bundle, status: [%s]", status));
                     }
                     log.error("Problem uninstalling bundle, please check AdeptJ OSGi Web Console!!");
                 }
@@ -94,9 +86,16 @@ public class BundleUninstallMojo extends AbstractBundleMojo {
                 }
                 log.error("Authentication failed, please check credentials!!");
             }
-        } catch (Exception ex) {
-            throw new MojoExecutionException("Bundle uninstall operation on [" + this.adeptjConsoleURL + "] failed, cause: "
+        } catch (IOException | BundleMojoException ex) {
+            this.getLog().error(ex);
+            throw new MojoExecutionException("Bundle uninstall operation on [" + this.consoleUrl + "] failed, cause: "
                     + ex.getMessage(), ex);
+        } catch (InterruptedException ex) {
+            this.getLog().error(ex);
+            if (!Thread.currentThread().isInterrupted()) {
+                Thread.currentThread().interrupt();
+            }
+            throw new MojoExecutionException("Installation on [" + this.consoleUrl + "] failed, cause: " + ex.getMessage(), ex);
         } finally {
             this.logout();
         }

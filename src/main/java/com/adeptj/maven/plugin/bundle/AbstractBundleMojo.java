@@ -32,7 +32,6 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.jar.Attributes;
 import java.util.jar.JarFile;
@@ -49,6 +48,7 @@ import static com.adeptj.maven.plugin.bundle.Constants.J_PASSWORD;
 import static com.adeptj.maven.plugin.bundle.Constants.J_USERNAME;
 import static com.adeptj.maven.plugin.bundle.Constants.REGEX_EQ;
 import static com.adeptj.maven.plugin.bundle.Constants.REGEX_SEMI_COLON;
+import static com.adeptj.maven.plugin.bundle.Constants.SC_OK;
 import static com.adeptj.maven.plugin.bundle.Constants.VALUE_TRUE;
 
 /**
@@ -59,7 +59,7 @@ import static com.adeptj.maven.plugin.bundle.Constants.VALUE_TRUE;
 abstract class AbstractBundleMojo extends AbstractMojo {
 
     @Parameter(property = "adeptj.console.url", defaultValue = DEFAULT_CONSOLE_URL, required = true)
-    String adeptjConsoleURL;
+    String consoleUrl;
 
     @Parameter(property = "adeptj.auth.url", defaultValue = DEFAULT_AUTH_URL, required = true)
     private String authUrl;
@@ -86,40 +86,24 @@ abstract class AbstractBundleMojo extends AbstractMojo {
                 .followRedirects(HttpClient.Redirect.NORMAL)
                 .version(HttpClient.Version.HTTP_2)
                 .build();
-        this.getLog().debug("JDK HttpClient initialized!!");
     }
 
     boolean login() {
-        Map<String, Object> data = new HashMap<>();
-        data.put(J_USERNAME, this.user);
-        data.put(J_PASSWORD, this.password);
-        getLog().info(data.toString());
-        HttpRequest loginRequest = HttpRequest.newBuilder()
-                .POST(BundleMojoUtil.ofFormData(data))
-                .uri(URI.create(this.authUrl))
-                .header("Content-Type", "application/x-www-form-urlencoded")
-                .build();
+        Map<String, Object> data = Map.of(J_USERNAME, this.user, J_PASSWORD, this.password);
+        HttpRequest request = BundleMojoUtil.formUrlEncodedRequest(URI.create(this.authUrl), data);
         try {
-            HttpResponse<String> httpResponse = this.httpClient.send(loginRequest, HttpResponse.BodyHandlers.ofString());
-            System.out.println(httpResponse.headers().allValues(HEADER_SET_COOKIE));
-            getLog().info(httpResponse.body());
-            String sessionId = null;
-            for (String header : httpResponse.headers().allValues(HEADER_SET_COOKIE)) {
-                for (String token : header.split(REGEX_SEMI_COLON)) {
-                    if (StringUtils.startsWith(token, HEADER_JSESSIONID)) {
-                        sessionId = token.split(REGEX_EQ)[1];
-                        this.getLog().info("Retrieved AdeptJ SessionId from [SET-COOKIE] header: " + sessionId);
-                        break;
-                    }
-                }
-                if (StringUtils.isNotEmpty(sessionId)) {
-                    this.loginSucceeded = true;
-                    this.getLog().info("Login succeeded!!");
-                    break;
-                }
-            }
-        } catch (Exception ex) {
-            this.getLog().error(ex);
+            this.loginSucceeded = this.httpClient.send(request, HttpResponse.BodyHandlers.discarding())
+                    .headers()
+                    .allValues(HEADER_SET_COOKIE)
+                    .stream()
+                    .map(value -> value.split(REGEX_SEMI_COLON))
+                    .filter(mapping -> StringUtils.startsWith(mapping[0], HEADER_JSESSIONID))
+                    .map(mapping -> mapping[0].split(REGEX_EQ)[1])
+                    .anyMatch(StringUtils::isNotEmpty);
+        } catch (IOException ex) {
+            throw new BundleMojoException(ex);
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
             throw new BundleMojoException(ex);
         }
         return this.loginSucceeded;
@@ -127,20 +111,19 @@ abstract class AbstractBundleMojo extends AbstractMojo {
 
     void logout() {
         if (this.loginSucceeded) {
-            this.getLog().info("Invoking Logout!!");
-            HttpRequest logoutRequest = HttpRequest.newBuilder()
-                    .GET()
+            HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(this.logoutUrl))
+                    .GET()
                     .build();
             try {
-                HttpResponse<String> response = this.httpClient.send(logoutRequest, HttpResponse.BodyHandlers.ofString());
-                if (response.statusCode() == 200) {
-                    this.getLog().info("Logout successful!!");
-                } else {
-                    this.getLog().info("Logout failed!!");
+                if (this.httpClient.send(request, HttpResponse.BodyHandlers.discarding()).statusCode() == SC_OK) {
+                    this.getLog().debug("Logout successful!!");
                 }
-            } catch (IOException | InterruptedException ex) {
+            } catch (IOException ex) {
                 this.getLog().error(ex);
+            } catch (InterruptedException ex) {
+                this.getLog().error(ex);
+                Thread.currentThread().interrupt();
             }
         }
     }

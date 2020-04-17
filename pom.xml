@@ -32,13 +32,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <httpcore.version>4.4.13</httpcore.version>
-        <httpclient.version>4.5.12</httpclient.version>
-        <httpmime.version>4.5.12</httpmime.version>
-        <commons-io.version>2.6</commons-io.version>
         <commons-lang.version>3.10</commons-lang.version>
-        <commons-codec.version>1.14</commons-codec.version>
-        <commons-logging.version>1.2</commons-logging.version>
         <shrinkwrap.version>3.1.4</shrinkwrap.version>
         <maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
         <maven-plugin-plugin.version>3.6.0</maven-plugin-plugin.version>
@@ -49,7 +43,7 @@
         <maven-enforcer-plugin.version>3.0.0-M3</maven-enforcer-plugin.version>
         <maven-jar-plugin.version>3.2.0</maven-jar-plugin.version>
         <maven-gpg-plugin.version>1.6</maven-gpg-plugin.version>
-        <maven-source-plugin.version>3.1.0</maven-source-plugin.version>
+        <maven-source-plugin.version>3.2.1</maven-source-plugin.version>
         <maven-javadoc-plugin.version>3.2.0</maven-javadoc-plugin.version>
         <maven-deploy-plugin.version>3.0.0-M1</maven-deploy-plugin.version>
         <nexus-staging-maven-plugin.version>1.6.8</nexus-staging-maven-plugin.version>
