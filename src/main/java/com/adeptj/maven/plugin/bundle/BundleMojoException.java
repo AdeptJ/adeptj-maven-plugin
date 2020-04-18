@@ -27,7 +27,9 @@ package com.adeptj.maven.plugin.bundle;
  */
 public class BundleMojoException extends RuntimeException {
 
-    public BundleMojoException(Throwable cause) {
+	private static final long serialVersionUID = -2186507616951551394L;
+
+	public BundleMojoException(Throwable cause) {
         super(cause);
     }
 }
