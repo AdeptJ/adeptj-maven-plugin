@@ -68,7 +68,7 @@ public class BundleUninstallMojo extends AbstractBundleMojo {
         File bundle = new File(this.bundleFileName);
         try {
             BundleInfo info = this.getBundleInfo(bundle);
-            this.logBundleDetails(info, UNINSTALL);
+            this.logBundleInfo(info, UNINSTALL);
             // First login, then while installing bundle, HttpClient will pass the JSESSIONID received
             // in the Set-Cookie header in the auth call. if authentication fails, discontinue the further execution.
             if (this.login()) {
