@@ -29,15 +29,18 @@ import org.apache.hc.client5.http.cookie.CookieStore;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
+import org.apache.hc.core5.http.HttpEntity;
 import org.apache.hc.core5.http.NameValuePair;
 import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.apache.hc.core5.http.io.entity.HttpEntities;
 import org.apache.hc.core5.http.message.BasicNameValuePair;
 import org.apache.maven.plugin.AbstractMojo;
+import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Parameter;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.jar.Attributes;
@@ -52,8 +55,10 @@ import static com.adeptj.maven.plugin.bundle.Constants.DEFAULT_CONSOLE_URL;
 import static com.adeptj.maven.plugin.bundle.Constants.DEFAULT_LOGOUT_URL;
 import static com.adeptj.maven.plugin.bundle.Constants.J_PASSWORD;
 import static com.adeptj.maven.plugin.bundle.Constants.J_USERNAME;
+import static com.adeptj.maven.plugin.bundle.Constants.URL_INSTALL;
 import static com.adeptj.maven.plugin.bundle.Constants.VALUE_TRUE;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.apache.hc.core5.http.HttpStatus.SC_OK;
 
 /**
  * Base for various bundle mojo implementations.
@@ -127,25 +132,43 @@ abstract class AbstractBundleMojo extends AbstractMojo {
         }
     }
 
-    void closeHttpClient() {
-        if (this.httpClient != null) {
-            try {
-                this.cookieStore.clear();
-                this.httpClient.close();
-                this.getLog().debug("HttpClient closed!!");
-            } catch (IOException ex) {
-                this.getLog().error(ex);
+    void installBundle(HttpEntity multipartEntity) throws IOException, MojoExecutionException {
+        HttpPost request = new HttpPost(URI.create(this.consoleUrl + URL_INSTALL));
+        request.setEntity(multipartEntity);
+        try (CloseableHttpResponse response = this.httpClient.execute(request)) {
+            if (response.getCode() == SC_OK) {
+                EntityUtils.consume(response.getEntity());
+                this.getLog().info("Bundle installed successfully, please check AdeptJ OSGi Web Console"
+                        + " [" + this.consoleUrl + "]");
+            } else {
+                if (this.failOnError) {
+                    throw new MojoExecutionException(
+                            String.format("Bundle installation failed, reason: [%s], status: [%s]",
+                                    response.getReasonPhrase(),
+                                    response.getCode()));
+                }
+                this.getLog().warn("Problem installing bundle, please check AdeptJ OSGi Web Console!!");
             }
         }
     }
 
-    void logBundleDetails(BundleInfo dto, BundleMojoOp op) {
+    void closeHttpClient() {
+        try {
+            this.cookieStore.clear();
+            this.httpClient.close();
+            this.getLog().debug("HttpClient closed!!");
+        } catch (IOException ex) {
+            this.getLog().error(ex);
+        }
+    }
+
+    void logBundleInfo(BundleInfo info, BundleMojoOp op) {
         switch (op) {
             case INSTALL:
-                this.getLog().info("Installing " + dto);
+                this.getLog().info("Installing " + info);
                 break;
             case UNINSTALL:
-                this.getLog().info("Uninstalling " + dto);
+                this.getLog().info("Uninstalling " + info);
                 break;
         }
     }
