@@ -128,14 +128,12 @@ abstract class AbstractBundleMojo extends AbstractMojo {
     }
 
     void closeHttpClient() {
-        if (this.httpClient != null) {
-            try {
-                this.cookieStore.clear();
-                this.httpClient.close();
-                this.getLog().debug("HttpClient closed!!");
-            } catch (IOException ex) {
-                this.getLog().error(ex);
-            }
+        try {
+            this.cookieStore.clear();
+            this.httpClient.close();
+            this.getLog().debug("HttpClient closed!!");
+        } catch (IOException ex) {
+            this.getLog().error(ex);
         }
     }
 
