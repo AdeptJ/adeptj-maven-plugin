@@ -30,18 +30,6 @@ public final class Constants {
     private Constants() {
     }
 
-    public static final String AMPERSAND = "&";
-
-    public static final String EQ = "=";
-
-    public static final int SC_OK = 200;
-
-    static final String HEADER_CONTENT_TYPE = "Content-Type";
-
-    static final String FORM_URL_ENCODED = "application/x-www-form-urlencoded";
-
-    static final String MULTIPART_FORM_DATA = "multipart/form-data";
-
     static final String J_USERNAME = "j_username";
 
     static final String J_PASSWORD = "j_password";

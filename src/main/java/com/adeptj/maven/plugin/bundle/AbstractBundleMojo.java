@@ -22,17 +22,24 @@ package com.adeptj.maven.plugin.bundle;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
+import org.apache.hc.client5.http.classic.methods.HttpGet;
+import org.apache.hc.client5.http.classic.methods.HttpPost;
+import org.apache.hc.client5.http.cookie.BasicCookieStore;
+import org.apache.hc.client5.http.cookie.CookieStore;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
+import org.apache.hc.client5.http.impl.classic.HttpClients;
+import org.apache.hc.core5.http.NameValuePair;
+import org.apache.hc.core5.http.io.entity.EntityUtils;
+import org.apache.hc.core5.http.io.entity.HttpEntities;
+import org.apache.hc.core5.http.message.BasicNameValuePair;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugins.annotations.Parameter;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.CookieManager;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.jar.Attributes;
 import java.util.jar.JarFile;
 
@@ -45,8 +52,8 @@ import static com.adeptj.maven.plugin.bundle.Constants.DEFAULT_CONSOLE_URL;
 import static com.adeptj.maven.plugin.bundle.Constants.DEFAULT_LOGOUT_URL;
 import static com.adeptj.maven.plugin.bundle.Constants.J_PASSWORD;
 import static com.adeptj.maven.plugin.bundle.Constants.J_USERNAME;
-import static com.adeptj.maven.plugin.bundle.Constants.SC_OK;
 import static com.adeptj.maven.plugin.bundle.Constants.VALUE_TRUE;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Base for various bundle mojo implementations.
@@ -73,32 +80,34 @@ abstract class AbstractBundleMojo extends AbstractMojo {
     @Parameter(property = "adeptj.failOnError", defaultValue = VALUE_TRUE, required = true)
     boolean failOnError;
 
+    private final CookieStore cookieStore;
+
+    final CloseableHttpClient httpClient;
+
     private boolean loginSucceeded;
 
-    final HttpClient httpClient;
-
     public AbstractBundleMojo() {
-        this.httpClient = HttpClient.newBuilder()
-                .cookieHandler(new CookieManager())
-                .followRedirects(HttpClient.Redirect.NORMAL)
-                .version(HttpClient.Version.HTTP_2)
+        this.cookieStore = new BasicCookieStore();
+        this.httpClient = HttpClients.custom()
+                .disableRedirectHandling()
+                .setDefaultCookieStore(this.cookieStore)
                 .build();
     }
 
     boolean login() {
-        Map<String, Object> data = Map.of(J_USERNAME, this.user, J_PASSWORD, this.password);
-        HttpRequest request = BundleMojoUtil.formUrlEncodedRequest(URI.create(this.authUrl), data);
         try {
-            this.httpClient.send(request, HttpResponse.BodyHandlers.discarding());
-            this.httpClient.cookieHandler().ifPresent(handler ->
-                    this.loginSucceeded = ((CookieManager) handler).getCookieStore()
-                            .getCookies()
-                            .stream()
-                            .anyMatch(cookie -> StringUtils.startsWith(cookie.getName(), COOKIE_JSESSIONID)));
+            HttpPost request = new HttpPost(this.authUrl);
+            List<NameValuePair> parameters = new ArrayList<>();
+            parameters.add(new BasicNameValuePair(J_USERNAME, this.user));
+            parameters.add(new BasicNameValuePair(J_PASSWORD, this.password));
+            request.setEntity(HttpEntities.createUrlEncoded(parameters, UTF_8));
+            try (CloseableHttpResponse response = this.httpClient.execute(request)) {
+                this.loginSucceeded = this.cookieStore.getCookies()
+                        .stream()
+                        .anyMatch(cookie -> StringUtils.startsWith(cookie.getName(), COOKIE_JSESSIONID));
+                EntityUtils.consume(response.getEntity());
+            }
         } catch (IOException ex) {
-            throw new BundleMojoException(ex);
-        } catch (InterruptedException ex) {
-            Thread.currentThread().interrupt();
             throw new BundleMojoException(ex);
         }
         return this.loginSucceeded;
@@ -106,19 +115,26 @@ abstract class AbstractBundleMojo extends AbstractMojo {
 
     void logout() {
         if (this.loginSucceeded) {
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(this.logoutUrl))
-                    .GET()
-                    .build();
-            try {
-                if (this.httpClient.send(request, HttpResponse.BodyHandlers.discarding()).statusCode() == SC_OK) {
-                    this.getLog().debug("Logout successful!!");
-                }
+            this.getLog().debug("Invoking Logout!!");
+            try (CloseableHttpResponse response = this.httpClient.execute(new HttpGet(this.logoutUrl))) {
+                this.getLog().debug("Logout status code: " + response.getCode());
+                this.getLog().debug("Logout successful!!");
+                EntityUtils.consume(response.getEntity());
+                this.cookieStore.clear();
             } catch (IOException ex) {
                 this.getLog().error(ex);
-            } catch (InterruptedException ex) {
+            }
+        }
+    }
+
+    void closeHttpClient() {
+        if (this.httpClient != null) {
+            try {
+                this.cookieStore.clear();
+                this.httpClient.close();
+                this.getLog().debug("HttpClient closed!!");
+            } catch (IOException ex) {
                 this.getLog().error(ex);
-                Thread.currentThread().interrupt();
             }
         }
     }
