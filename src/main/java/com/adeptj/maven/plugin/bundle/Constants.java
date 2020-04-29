@@ -46,7 +46,7 @@ public final class Constants {
 
     static final String J_PASSWORD = "j_password";
 
-    static final String HEADER_JSESSIONID = "JSESSIONID";
+    static final String COOKIE_JSESSIONID = "JSESSIONID";
 
     static final String DEFAULT_AUTH_URL = "http://localhost:8080/admin/auth/j_security_check";
 
@@ -57,12 +57,6 @@ public final class Constants {
     static final String URL_INSTALL = "/install";
 
     static final String URL_UNINSTALL = "/bundles/%s";
-
-    static final String HEADER_SET_COOKIE = "Set-Cookie";
-
-    static final String REGEX_SEMI_COLON = ";";
-
-    static final String REGEX_EQ = "=";
 
     static final String PARAM_START_LEVEL = "bundlestartlevel";
 

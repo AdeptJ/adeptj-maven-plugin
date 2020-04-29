@@ -39,15 +39,12 @@ import java.util.jar.JarFile;
 import static com.adeptj.maven.plugin.bundle.Constants.BUNDLE_NAME;
 import static com.adeptj.maven.plugin.bundle.Constants.BUNDLE_SYMBOLIC_NAME;
 import static com.adeptj.maven.plugin.bundle.Constants.BUNDLE_VERSION;
+import static com.adeptj.maven.plugin.bundle.Constants.COOKIE_JSESSIONID;
 import static com.adeptj.maven.plugin.bundle.Constants.DEFAULT_AUTH_URL;
 import static com.adeptj.maven.plugin.bundle.Constants.DEFAULT_CONSOLE_URL;
 import static com.adeptj.maven.plugin.bundle.Constants.DEFAULT_LOGOUT_URL;
-import static com.adeptj.maven.plugin.bundle.Constants.HEADER_JSESSIONID;
-import static com.adeptj.maven.plugin.bundle.Constants.HEADER_SET_COOKIE;
 import static com.adeptj.maven.plugin.bundle.Constants.J_PASSWORD;
 import static com.adeptj.maven.plugin.bundle.Constants.J_USERNAME;
-import static com.adeptj.maven.plugin.bundle.Constants.REGEX_EQ;
-import static com.adeptj.maven.plugin.bundle.Constants.REGEX_SEMI_COLON;
 import static com.adeptj.maven.plugin.bundle.Constants.SC_OK;
 import static com.adeptj.maven.plugin.bundle.Constants.VALUE_TRUE;
 
@@ -92,14 +89,12 @@ abstract class AbstractBundleMojo extends AbstractMojo {
         Map<String, Object> data = Map.of(J_USERNAME, this.user, J_PASSWORD, this.password);
         HttpRequest request = BundleMojoUtil.formUrlEncodedRequest(URI.create(this.authUrl), data);
         try {
-            this.loginSucceeded = this.httpClient.send(request, HttpResponse.BodyHandlers.discarding())
-                    .headers()
-                    .allValues(HEADER_SET_COOKIE)
-                    .stream()
-                    .map(value -> value.split(REGEX_SEMI_COLON))
-                    .filter(mapping -> StringUtils.startsWith(mapping[0], HEADER_JSESSIONID))
-                    .map(mapping -> mapping[0].split(REGEX_EQ)[1])
-                    .anyMatch(StringUtils::isNotEmpty);
+            this.httpClient.send(request, HttpResponse.BodyHandlers.discarding());
+            this.httpClient.cookieHandler().ifPresent(handler ->
+                    this.loginSucceeded = ((CookieManager) handler).getCookieStore()
+                            .getCookies()
+                            .stream()
+                            .anyMatch(cookie -> StringUtils.startsWith(cookie.getName(), COOKIE_JSESSIONID)));
         } catch (IOException ex) {
             throw new BundleMojoException(ex);
         } catch (InterruptedException ex) {
