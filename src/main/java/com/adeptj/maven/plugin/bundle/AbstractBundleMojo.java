@@ -102,10 +102,10 @@ abstract class AbstractBundleMojo extends AbstractMojo {
             parameters.add(new BasicNameValuePair(J_PASSWORD, this.password));
             request.setEntity(HttpEntities.createUrlEncoded(parameters, UTF_8));
             try (CloseableHttpResponse response = this.httpClient.execute(request)) {
+                EntityUtils.consumeQuietly(response.getEntity());
                 this.loginSucceeded = this.cookieStore.getCookies()
                         .stream()
                         .anyMatch(cookie -> StringUtils.startsWith(cookie.getName(), COOKIE_JSESSIONID));
-                EntityUtils.consume(response.getEntity());
             }
         } catch (IOException ex) {
             throw new BundleMojoException(ex);
@@ -119,7 +119,7 @@ abstract class AbstractBundleMojo extends AbstractMojo {
             try (CloseableHttpResponse response = this.httpClient.execute(new HttpGet(this.logoutUrl))) {
                 this.getLog().debug("Logout status code: " + response.getCode());
                 this.getLog().debug("Logout successful!!");
-                EntityUtils.consume(response.getEntity());
+                EntityUtils.consumeQuietly(response.getEntity());
                 this.cookieStore.clear();
             } catch (IOException ex) {
                 this.getLog().error(ex);
@@ -139,7 +139,7 @@ abstract class AbstractBundleMojo extends AbstractMojo {
         }
     }
 
-    void logBundleDetails(BundleDTO dto, BundleMojoOp op) {
+    void logBundleDetails(BundleInfo dto, BundleMojoOp op) {
         switch (op) {
             case INSTALL:
                 this.getLog().info("Installing " + dto);
@@ -150,7 +150,7 @@ abstract class AbstractBundleMojo extends AbstractMojo {
         }
     }
 
-    BundleDTO getBundleDTO(File bundle) throws IOException {
+    BundleInfo getBundleInfo(File bundle) throws IOException {
         try (JarFile bundleArchive = new JarFile(bundle)) {
             Attributes mainAttributes = bundleArchive.getManifest().getMainAttributes();
             String bundleName = mainAttributes.getValue(BUNDLE_NAME);
@@ -158,7 +158,7 @@ abstract class AbstractBundleMojo extends AbstractMojo {
             String symbolicName = mainAttributes.getValue(BUNDLE_SYMBOLIC_NAME);
             Validate.isTrue(StringUtils.isNotEmpty(symbolicName), "Bundle symbolic name is blank!!");
             String bundleVersion = mainAttributes.getValue(BUNDLE_VERSION);
-            return new BundleDTO(bundleName, symbolicName, bundleVersion);
+            return new BundleInfo(bundleName, symbolicName, bundleVersion);
         }
     }
 }

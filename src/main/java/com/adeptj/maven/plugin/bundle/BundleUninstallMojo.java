@@ -67,12 +67,12 @@ public class BundleUninstallMojo extends AbstractBundleMojo {
         Log log = this.getLog();
         File bundle = new File(this.bundleFileName);
         try {
-            BundleDTO dto = this.getBundleDTO(bundle);
-            this.logBundleDetails(dto, UNINSTALL);
+            BundleInfo info = this.getBundleInfo(bundle);
+            this.logBundleDetails(info, UNINSTALL);
             // First login, then while installing bundle, HttpClient will pass the JSESSIONID received
             // in the Set-Cookie header in the auth call. if authentication fails, discontinue the further execution.
             if (this.login()) {
-                URI uri = URI.create(this.consoleUrl + String.format(URL_UNINSTALL, dto.getSymbolicName()));
+                URI uri = URI.create(this.consoleUrl + String.format(URL_UNINSTALL, info.getSymbolicName()));
                 HttpPost request = new HttpPost(uri);
                 List<NameValuePair> parameters = new ArrayList<>();
                 parameters.add(new BasicNameValuePair(PARAM_ACTION, PARAM_ACTION_UNINSTALL_VALUE));

@@ -25,7 +25,7 @@ package com.adeptj.maven.plugin.bundle;
  *
  * @author Rakesh.Kumar, AdeptJ
  */
-class BundleDTO {
+class BundleInfo {
 
     private final String bundleName;
 
@@ -33,7 +33,7 @@ class BundleDTO {
 
     private final String bundleVersion;
 
-    BundleDTO(String bundleName, String symbolicName, String bundleVersion) {
+    BundleInfo(String bundleName, String symbolicName, String bundleVersion) {
         this.bundleName = bundleName;
         this.symbolicName = symbolicName;
         this.bundleVersion = bundleVersion;

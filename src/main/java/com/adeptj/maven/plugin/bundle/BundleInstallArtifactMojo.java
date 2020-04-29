@@ -79,7 +79,7 @@ public class BundleInstallArtifactMojo extends AbstractBundleMojo {
                 .withoutTransitivity()
                 .asSingleFile();
         try {
-            this.logBundleDetails(this.getBundleDTO(bundle), INSTALL);
+            this.logBundleDetails(this.getBundleInfo(bundle), INSTALL);
             // First login, then while installing bundle, HttpClient will pass the JSESSIONID received
             // in the Set-Cookie header in the auth call. if authentication fails, discontinue the further execution.
             if (this.login()) {
