@@ -21,7 +21,6 @@
 package com.adeptj.maven.plugin.bundle;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.Validate;
 import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.classic.methods.HttpPost;
 import org.apache.hc.client5.http.cookie.BasicCookieStore;
@@ -29,7 +28,6 @@ import org.apache.hc.client5.http.cookie.CookieStore;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
-import org.apache.hc.core5.http.HttpEntity;
 import org.apache.hc.core5.http.NameValuePair;
 import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.apache.hc.core5.http.io.entity.HttpEntities;
@@ -56,6 +54,7 @@ import static com.adeptj.maven.plugin.bundle.Constants.DEFAULT_LOGOUT_URL;
 import static com.adeptj.maven.plugin.bundle.Constants.J_PASSWORD;
 import static com.adeptj.maven.plugin.bundle.Constants.J_USERNAME;
 import static com.adeptj.maven.plugin.bundle.Constants.URL_INSTALL;
+import static com.adeptj.maven.plugin.bundle.Constants.VALUE_FALSE;
 import static com.adeptj.maven.plugin.bundle.Constants.VALUE_TRUE;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.hc.core5.http.HttpStatus.SC_OK;
@@ -66,6 +65,28 @@ import static org.apache.hc.core5.http.HttpStatus.SC_OK;
  * @author Rakesh.Kumar, AdeptJ
  */
 abstract class AbstractBundleMojo extends AbstractMojo {
+
+    @Parameter(
+            property = "adeptj.bundle.file",
+            defaultValue = "${project.build.directory}/${project.build.finalName}.jar",
+            required = true
+    )
+    String bundleFileName;
+
+    @Parameter(property = "adeptj.failOnError", defaultValue = VALUE_TRUE, required = true)
+    boolean failOnError;
+
+    @Parameter(property = "adeptj.bundle.startlevel", defaultValue = "20", required = true)
+    String startLevel;
+
+    @Parameter(property = "adeptj.bundle.start", defaultValue = VALUE_TRUE, required = true)
+    boolean startBundle;
+
+    @Parameter(property = "adeptj.bundle.refreshPackages", defaultValue = VALUE_TRUE, required = true)
+    boolean refreshPackages;
+
+    @Parameter(property = "adeptj.bundle.parallelVersion", defaultValue = VALUE_FALSE)
+    boolean parallelVersion;
 
     @Parameter(property = "adeptj.console.url", defaultValue = DEFAULT_CONSOLE_URL, required = true)
     String consoleUrl;
@@ -81,9 +102,6 @@ abstract class AbstractBundleMojo extends AbstractMojo {
 
     @Parameter(property = "adeptj.password", defaultValue = "admin", required = true)
     private String password;
-
-    @Parameter(property = "adeptj.failOnError", defaultValue = VALUE_TRUE, required = true)
-    boolean failOnError;
 
     private final CookieStore cookieStore;
 
@@ -132,9 +150,11 @@ abstract class AbstractBundleMojo extends AbstractMojo {
         }
     }
 
-    void installBundle(HttpEntity multipartEntity) throws IOException, MojoExecutionException {
+    void installBundle(File bundle) throws IOException, MojoExecutionException {
         HttpPost request = new HttpPost(URI.create(this.consoleUrl + URL_INSTALL));
-        request.setEntity(multipartEntity);
+        request.setEntity(BundleMojoUtil.newMultipartEntity(bundle, this.startLevel, this.startBundle,
+                this.refreshPackages,
+                this.parallelVersion));
         try (CloseableHttpResponse response = this.httpClient.execute(request)) {
             if (response.getCode() == SC_OK) {
                 EntityUtils.consume(response.getEntity());
@@ -177,9 +197,7 @@ abstract class AbstractBundleMojo extends AbstractMojo {
         try (JarFile bundleArchive = new JarFile(bundle)) {
             Attributes mainAttributes = bundleArchive.getManifest().getMainAttributes();
             String bundleName = mainAttributes.getValue(BUNDLE_NAME);
-            Validate.isTrue(StringUtils.isNotEmpty(bundleName), "Artifact is not a Bundle!!");
             String symbolicName = mainAttributes.getValue(BUNDLE_SYMBOLIC_NAME);
-            Validate.isTrue(StringUtils.isNotEmpty(symbolicName), "Bundle symbolic name is blank!!");
             String bundleVersion = mainAttributes.getValue(BUNDLE_VERSION);
             return new BundleInfo(bundleName, symbolicName, bundleVersion);
         }

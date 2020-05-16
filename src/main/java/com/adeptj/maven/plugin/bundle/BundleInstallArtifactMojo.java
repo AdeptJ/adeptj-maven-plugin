@@ -30,8 +30,6 @@ import java.io.IOException;
 
 import static com.adeptj.maven.plugin.bundle.BundleInstallArtifactMojo.MOJO_NAME;
 import static com.adeptj.maven.plugin.bundle.BundleMojoOp.INSTALL;
-import static com.adeptj.maven.plugin.bundle.Constants.VALUE_FALSE;
-import static com.adeptj.maven.plugin.bundle.Constants.VALUE_TRUE;
 
 /**
  * Install an OSGi bundle from maven repository to a running AdeptJ Runtime instance.
@@ -52,18 +50,6 @@ public class BundleInstallArtifactMojo extends AbstractBundleMojo {
     @Parameter(property = "adeptj.artifact.version")
     private String version;
 
-    @Parameter(property = "adeptj.bundle.startlevel", defaultValue = "20", required = true)
-    private String startLevel;
-
-    @Parameter(property = "adeptj.bundle.start", defaultValue = VALUE_TRUE, required = true)
-    private boolean startBundle;
-
-    @Parameter(property = "adeptj.bundle.refreshPackages", defaultValue = VALUE_TRUE, required = true)
-    private boolean refreshPackages;
-
-    @Parameter(property = "adeptj.bundle.parallelVersion", defaultValue = VALUE_FALSE)
-    private boolean parallelVersion;
-
     @Override
     public void execute() throws MojoExecutionException {
         File bundle = Maven.resolver()
@@ -75,9 +61,7 @@ public class BundleInstallArtifactMojo extends AbstractBundleMojo {
             // First login, then while installing bundle, HttpClient will pass the JSESSIONID received
             // in the Set-Cookie header in the auth call. if authentication fails, discontinue the further execution.
             if (this.login()) {
-                this.installBundle(BundleMojoUtil.newMultipartEntity(bundle, this.startLevel, this.startBundle,
-                        this.refreshPackages,
-                        this.parallelVersion));
+                this.installBundle(bundle);
             } else {
                 // means authentication was failed.
                 if (this.failOnError) {

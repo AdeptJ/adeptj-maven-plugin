@@ -28,8 +28,6 @@ import java.io.File;
 import java.io.IOException;
 
 import static com.adeptj.maven.plugin.bundle.BundleInstallMojo.MOJO_NAME;
-import static com.adeptj.maven.plugin.bundle.Constants.VALUE_FALSE;
-import static com.adeptj.maven.plugin.bundle.Constants.VALUE_TRUE;
 import static org.apache.maven.plugins.annotations.LifecyclePhase.INSTALL;
 
 /**
@@ -42,25 +40,6 @@ public class BundleInstallMojo extends AbstractBundleMojo {
 
     static final String MOJO_NAME = "install";
 
-    @Parameter(
-            property = "adeptj.bundle.file",
-            defaultValue = "${project.build.directory}/${project.build.finalName}.jar",
-            required = true
-    )
-    private String bundleFileName;
-
-    @Parameter(property = "adeptj.bundle.startlevel", defaultValue = "20", required = true)
-    private String startLevel;
-
-    @Parameter(property = "adeptj.bundle.start", defaultValue = VALUE_TRUE, required = true)
-    private boolean startBundle;
-
-    @Parameter(property = "adeptj.bundle.refreshPackages", defaultValue = VALUE_TRUE, required = true)
-    private boolean refreshPackages;
-
-    @Parameter(property = "adeptj.bundle.parallelVersion", defaultValue = VALUE_FALSE)
-    private boolean parallelVersion;
-
     @Override
     public void execute() throws MojoExecutionException {
         File bundle = new File(this.bundleFileName);
@@ -69,9 +48,7 @@ public class BundleInstallMojo extends AbstractBundleMojo {
             // First login, then while installing bundle, HttpClient will pass the JSESSIONID received
             // in the Set-Cookie header in the auth call. if authentication fails, discontinue the further execution.
             if (this.login()) {
-                this.installBundle(BundleMojoUtil.newMultipartEntity(bundle, this.startLevel, this.startBundle,
-                        this.refreshPackages,
-                        this.parallelVersion));
+                this.installBundle(bundle);
             } else {
                 // means authentication was failed.
                 if (this.failOnError) {

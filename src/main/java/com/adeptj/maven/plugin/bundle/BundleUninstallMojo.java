@@ -29,7 +29,6 @@ import org.apache.hc.core5.http.message.BasicNameValuePair;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugins.annotations.Mojo;
-import org.apache.maven.plugins.annotations.Parameter;
 
 import java.io.File;
 import java.io.IOException;
@@ -54,13 +53,6 @@ import static org.apache.hc.core5.http.HttpStatus.SC_OK;
 public class BundleUninstallMojo extends AbstractBundleMojo {
 
     static final String MOJO_NAME = "uninstall";
-
-    @Parameter(
-            property = "adeptj.bundle.file",
-            defaultValue = "${project.build.directory}/${project.build.finalName}.jar"
-    )
-    private String bundleFileName;
-
 
     @Override
     public void execute() throws MojoExecutionException {

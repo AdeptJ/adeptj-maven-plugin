@@ -20,6 +20,9 @@
 
 package com.adeptj.maven.plugin.bundle;
 
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Validate;
+
 /**
  * A simple Bundle information holder.
  *
@@ -34,21 +37,15 @@ class BundleInfo {
     private final String bundleVersion;
 
     BundleInfo(String bundleName, String symbolicName, String bundleVersion) {
+        Validate.isTrue(StringUtils.isNotEmpty(symbolicName), "Bundle symbolic name is null!!");
+        Validate.isTrue(StringUtils.isNotEmpty(bundleName), "Artifact is not a Bundle!!");
         this.bundleName = bundleName;
         this.symbolicName = symbolicName;
         this.bundleVersion = bundleVersion;
     }
 
-    String getBundleName() {
-        return this.bundleName;
-    }
-
     String getSymbolicName() {
         return this.symbolicName;
-    }
-
-    String getBundleVersion() {
-        return this.bundleVersion;
     }
 
     @Override
