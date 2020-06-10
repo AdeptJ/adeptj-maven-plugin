@@ -45,8 +45,8 @@ final class BundleMojoUtil {
     private BundleMojoUtil() {
     }
 
-    static HttpEntity newMultipartEntity(File bundle, String startLevel, boolean startBundle, boolean refreshPackages,
-                                         boolean parallelVersion) {
+    static HttpEntity newMultipartEntity(File bundle, String startLevel,
+                                         boolean startBundle, boolean refreshPackages, boolean parallelVersion) {
         MultipartEntityBuilder multipartEntityBuilder = MultipartEntityBuilder.create()
                 .setCharset(UTF_8)
                 .addBinaryBody(PARAM_BUNDLE_FILE, bundle)
