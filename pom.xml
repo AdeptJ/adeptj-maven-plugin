@@ -33,8 +33,8 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <jdk.release.version>11</jdk.release.version>
-        <commons-lang.version>3.10</commons-lang.version>
-        <commons-codec.version>1.14</commons-codec.version>
+        <commons-lang.version>3.11</commons-lang.version>
+        <commons-codec.version>1.15</commons-codec.version>
         <httpclient5.version>5.0.3</httpclient5.version>
         <slf4j.version>1.7.30</slf4j.version>
         <shrinkwrap.version>3.1.4</shrinkwrap.version>
