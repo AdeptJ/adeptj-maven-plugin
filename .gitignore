@@ -25,3 +25,4 @@ hs_err_pid*
 .project
 *.prefs
 .DS_Store
+.factorypath
