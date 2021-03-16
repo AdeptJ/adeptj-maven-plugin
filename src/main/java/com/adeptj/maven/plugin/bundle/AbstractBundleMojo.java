@@ -49,7 +49,7 @@ import static com.adeptj.maven.plugin.bundle.Constants.DEFAULT_CONSOLE_URL;
 import static com.adeptj.maven.plugin.bundle.Constants.DEFAULT_LOGOUT_URL;
 import static com.adeptj.maven.plugin.bundle.Constants.J_PASSWORD;
 import static com.adeptj.maven.plugin.bundle.Constants.J_USERNAME;
-import static com.adeptj.maven.plugin.bundle.Constants.URL_INSTALL;
+import static com.adeptj.maven.plugin.bundle.Constants.URL_BUNDLE_INSTALL;
 import static com.adeptj.maven.plugin.bundle.Constants.VALUE_FALSE;
 import static com.adeptj.maven.plugin.bundle.Constants.VALUE_TRUE;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -147,7 +147,7 @@ abstract class AbstractBundleMojo extends AbstractMojo {
     }
 
     void installBundle(File bundle) throws IOException, MojoExecutionException {
-        HttpPost request = new HttpPost(URI.create(this.consoleUrl + URL_INSTALL));
+        HttpPost request = new HttpPost(URI.create(String.format(URL_BUNDLE_INSTALL, this.consoleUrl)));
         request.setEntity(BundleMojoUtil.newMultipartEntity(bundle, this.startLevel, this.startBundle,
                 this.refreshPackages,
                 this.parallelVersion));
@@ -155,7 +155,7 @@ abstract class AbstractBundleMojo extends AbstractMojo {
             if (response.getCode() == SC_OK) {
                 EntityUtils.consume(response.getEntity());
                 this.getLog().info("Bundle installed successfully, please check AdeptJ OSGi Web Console"
-                        + " [" + this.consoleUrl + "]");
+                        + " [" + this.consoleUrl + "/bundles" + "]");
                 return;
             }
             if (this.failOnError) {

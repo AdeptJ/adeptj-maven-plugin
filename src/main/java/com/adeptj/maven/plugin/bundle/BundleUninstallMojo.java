@@ -39,7 +39,7 @@ import static com.adeptj.maven.plugin.bundle.BundleMojoOp.UNINSTALL;
 import static com.adeptj.maven.plugin.bundle.BundleUninstallMojo.MOJO_NAME;
 import static com.adeptj.maven.plugin.bundle.Constants.PARAM_ACTION;
 import static com.adeptj.maven.plugin.bundle.Constants.PARAM_ACTION_UNINSTALL_VALUE;
-import static com.adeptj.maven.plugin.bundle.Constants.URL_UNINSTALL;
+import static com.adeptj.maven.plugin.bundle.Constants.URL_BUNDLE_UNINSTALL;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.hc.core5.http.HttpStatus.SC_OK;
 
@@ -81,7 +81,7 @@ public class BundleUninstallMojo extends AbstractBundleMojo {
     }
 
     private void uninstallBundle(BundleInfo info) throws IOException, MojoExecutionException {
-        URI uri = URI.create(this.consoleUrl + String.format(URL_UNINSTALL, info.getSymbolicName()));
+        URI uri = URI.create(String.format(URL_BUNDLE_UNINSTALL, this.consoleUrl, info.getSymbolicName()));
         HttpPost request = new HttpPost(uri);
         List<NameValuePair> form = new ArrayList<>();
         form.add(new BasicNameValuePair(PARAM_ACTION, PARAM_ACTION_UNINSTALL_VALUE));
@@ -90,7 +90,7 @@ public class BundleUninstallMojo extends AbstractBundleMojo {
             if (response.getCode() == SC_OK) {
                 EntityUtils.consume(response.getEntity());
                 this.getLog().info("Bundle uninstalled successfully, please check AdeptJ OSGi Web Console"
-                        + " [" + this.consoleUrl + "]");
+                        + " [" + this.consoleUrl + "/bundles" + "]");
             } else {
                 if (this.failOnError) {
                     throw new MojoExecutionException(

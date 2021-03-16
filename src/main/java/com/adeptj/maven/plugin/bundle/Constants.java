@@ -42,9 +42,9 @@ public final class Constants {
 
     static final String DEFAULT_CONSOLE_URL = "http://localhost:8080/system/console";
 
-    static final String URL_INSTALL = "/install";
+    static final String URL_BUNDLE_INSTALL = "%s/install";
 
-    static final String URL_UNINSTALL = "/bundles/%s";
+    static final String URL_BUNDLE_UNINSTALL = "%s/bundles/%s";
 
     static final String PARAM_START_LEVEL = "bundlestartlevel";
 
