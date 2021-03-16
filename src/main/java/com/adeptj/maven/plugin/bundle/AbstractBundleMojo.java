@@ -41,12 +41,8 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.jar.Attributes;
 import java.util.jar.JarFile;
 
-import static com.adeptj.maven.plugin.bundle.Constants.BUNDLE_NAME;
-import static com.adeptj.maven.plugin.bundle.Constants.BUNDLE_SYMBOLIC_NAME;
-import static com.adeptj.maven.plugin.bundle.Constants.BUNDLE_VERSION;
 import static com.adeptj.maven.plugin.bundle.Constants.COOKIE_JSESSIONID;
 import static com.adeptj.maven.plugin.bundle.Constants.DEFAULT_AUTH_URL;
 import static com.adeptj.maven.plugin.bundle.Constants.DEFAULT_CONSOLE_URL;
@@ -120,10 +116,10 @@ abstract class AbstractBundleMojo extends AbstractMojo {
     boolean login() {
         try {
             HttpPost request = new HttpPost(this.authUrl);
-            List<NameValuePair> parameters = new ArrayList<>();
-            parameters.add(new BasicNameValuePair(J_USERNAME, this.user));
-            parameters.add(new BasicNameValuePair(J_PASSWORD, this.password));
-            request.setEntity(HttpEntities.createUrlEncoded(parameters, UTF_8));
+            List<NameValuePair> form = new ArrayList<>();
+            form.add(new BasicNameValuePair(J_USERNAME, this.user));
+            form.add(new BasicNameValuePair(J_PASSWORD, this.password));
+            request.setEntity(HttpEntities.createUrlEncoded(form, UTF_8));
             try (CloseableHttpResponse response = this.httpClient.execute(request)) {
                 EntityUtils.consumeQuietly(response.getEntity());
                 this.loginSucceeded = this.cookieStore.getCookies()
@@ -160,15 +156,15 @@ abstract class AbstractBundleMojo extends AbstractMojo {
                 EntityUtils.consume(response.getEntity());
                 this.getLog().info("Bundle installed successfully, please check AdeptJ OSGi Web Console"
                         + " [" + this.consoleUrl + "]");
-            } else {
-                if (this.failOnError) {
-                    throw new MojoExecutionException(
-                            String.format("Bundle installation failed, reason: [%s], status: [%s]",
-                                    response.getReasonPhrase(),
-                                    response.getCode()));
-                }
-                this.getLog().warn("Problem installing bundle, please check AdeptJ OSGi Web Console!!");
+                return;
             }
+            if (this.failOnError) {
+                throw new MojoExecutionException(
+                        String.format("Bundle installation failed, reason: [%s], status: [%s]",
+                                response.getReasonPhrase(),
+                                response.getCode()));
+            }
+            this.getLog().warn("Problem installing bundle, please check AdeptJ OSGi Web Console!!");
         }
     }
 
@@ -195,11 +191,7 @@ abstract class AbstractBundleMojo extends AbstractMojo {
 
     BundleInfo getBundleInfo(File bundle) throws IOException {
         try (JarFile bundleArchive = new JarFile(bundle)) {
-            Attributes mainAttributes = bundleArchive.getManifest().getMainAttributes();
-            String bundleName = mainAttributes.getValue(BUNDLE_NAME);
-            String symbolicName = mainAttributes.getValue(BUNDLE_SYMBOLIC_NAME);
-            String bundleVersion = mainAttributes.getValue(BUNDLE_VERSION);
-            return new BundleInfo(bundleName, symbolicName, bundleVersion);
+            return new BundleInfo(bundleArchive.getManifest().getMainAttributes());
         }
     }
 }

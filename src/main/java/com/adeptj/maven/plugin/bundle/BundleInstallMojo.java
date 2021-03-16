@@ -48,14 +48,14 @@ public class BundleInstallMojo extends AbstractBundleMojo {
             // in the Set-Cookie header in the auth call. if authentication fails, discontinue the further execution.
             if (this.login()) {
                 this.installBundle(bundle);
-            } else {
-                // means authentication was failed.
-                if (this.failOnError) {
-                    throw new MojoExecutionException("[Authentication failed, please check credentials!!]");
-                }
-                this.getLog().error("Authentication failed, please check credentials!!");
+                return;
             }
-        } catch (IOException | BundleMojoException ex) {
+            // means authentication was failed.
+            if (this.failOnError) {
+                throw new MojoExecutionException("[Authentication failed, please check credentials!!]");
+            }
+            this.getLog().error("Authentication failed, please check credentials!!");
+        } catch (IOException | BundleMojoException | IllegalArgumentException ex) {
             this.getLog().error(ex);
             throw new MojoExecutionException("Installation on [" + this.consoleUrl + "] failed, cause: " + ex.getMessage(), ex);
         } finally {

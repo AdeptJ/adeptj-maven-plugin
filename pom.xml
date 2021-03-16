@@ -23,7 +23,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.adeptj</groupId>
     <artifactId>adeptj-maven-plugin</artifactId>
-    <version>1.4.2</version>
+    <version>1.4.3</version>
     <packaging>maven-plugin</packaging>
     <name>AdeptJ :: Maven Plugin</name>
     <description>AdeptJ Maven Plugin for Supporting Bundle Development</description>

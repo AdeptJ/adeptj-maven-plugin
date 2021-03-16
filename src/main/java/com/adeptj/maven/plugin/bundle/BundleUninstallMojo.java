@@ -27,7 +27,6 @@ import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.apache.hc.core5.http.io.entity.HttpEntities;
 import org.apache.hc.core5.http.message.BasicNameValuePair;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugins.annotations.Mojo;
 
 import java.io.File;
@@ -56,7 +55,6 @@ public class BundleUninstallMojo extends AbstractBundleMojo {
 
     @Override
     public void execute() throws MojoExecutionException {
-        Log log = this.getLog();
         File bundle = new File(this.bundleFileName);
         try {
             BundleInfo info = this.getBundleInfo(bundle);
@@ -64,40 +62,44 @@ public class BundleUninstallMojo extends AbstractBundleMojo {
             // First login, then while installing bundle, HttpClient will pass the JSESSIONID received
             // in the Set-Cookie header in the auth call. if authentication fails, discontinue the further execution.
             if (this.login()) {
-                URI uri = URI.create(this.consoleUrl + String.format(URL_UNINSTALL, info.getSymbolicName()));
-                HttpPost request = new HttpPost(uri);
-                List<NameValuePair> parameters = new ArrayList<>();
-                parameters.add(new BasicNameValuePair(PARAM_ACTION, PARAM_ACTION_UNINSTALL_VALUE));
-                request.setEntity(HttpEntities.createUrlEncoded(parameters, UTF_8));
-                try (CloseableHttpResponse response = this.httpClient.execute(request)) {
-                    if (response.getCode() == SC_OK) {
-                        EntityUtils.consume(response.getEntity());
-                        log.info("Bundle uninstalled successfully, please check AdeptJ OSGi Web Console"
-                                + " [" + this.consoleUrl + "]");
-                    } else {
-                        if (this.failOnError) {
-                            throw new MojoExecutionException(
-                                    String.format("Couldn't uninstall bundle , reason: [%s], status: [%s]",
-                                            response.getReasonPhrase(),
-                                            response.getCode()));
-                        }
-                        log.error("Problem uninstalling bundle, please check AdeptJ OSGi Web Console!!");
-                    }
-                }
-            } else {
-                // means authentication was failed.
-                if (this.failOnError) {
-                    throw new MojoExecutionException("[Authentication failed, please check credentials!!]");
-                }
-                log.error("Authentication failed, please check credentials!!");
+                this.uninstallBundle(info);
+                return;
             }
-        } catch (IOException | BundleMojoException ex) {
+            // means authentication was failed.
+            if (this.failOnError) {
+                throw new MojoExecutionException("[Authentication failed, please check credentials!!]");
+            }
+            this.getLog().error("Authentication failed, please check credentials!!");
+        } catch (IOException | BundleMojoException | IllegalArgumentException ex) {
             this.getLog().error(ex);
             throw new MojoExecutionException("Bundle uninstall operation on [" + this.consoleUrl + "] failed, cause: "
                     + ex.getMessage(), ex);
         } finally {
             this.logout();
             this.closeHttpClient();
+        }
+    }
+
+    private void uninstallBundle(BundleInfo info) throws IOException, MojoExecutionException {
+        URI uri = URI.create(this.consoleUrl + String.format(URL_UNINSTALL, info.getSymbolicName()));
+        HttpPost request = new HttpPost(uri);
+        List<NameValuePair> form = new ArrayList<>();
+        form.add(new BasicNameValuePair(PARAM_ACTION, PARAM_ACTION_UNINSTALL_VALUE));
+        request.setEntity(HttpEntities.createUrlEncoded(form, UTF_8));
+        try (CloseableHttpResponse response = this.httpClient.execute(request)) {
+            if (response.getCode() == SC_OK) {
+                EntityUtils.consume(response.getEntity());
+                this.getLog().info("Bundle uninstalled successfully, please check AdeptJ OSGi Web Console"
+                        + " [" + this.consoleUrl + "]");
+            } else {
+                if (this.failOnError) {
+                    throw new MojoExecutionException(
+                            String.format("Couldn't uninstall bundle , reason: [%s], status: [%s]",
+                                    response.getReasonPhrase(),
+                                    response.getCode()));
+                }
+                this.getLog().error("Problem uninstalling bundle, please check AdeptJ OSGi Web Console!!");
+            }
         }
     }
 }

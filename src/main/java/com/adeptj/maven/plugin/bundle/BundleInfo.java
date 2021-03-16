@@ -23,6 +23,12 @@ package com.adeptj.maven.plugin.bundle;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 
+import java.util.jar.Attributes;
+
+import static com.adeptj.maven.plugin.bundle.Constants.BUNDLE_NAME;
+import static com.adeptj.maven.plugin.bundle.Constants.BUNDLE_SYMBOLIC_NAME;
+import static com.adeptj.maven.plugin.bundle.Constants.BUNDLE_VERSION;
+
 /**
  * A simple Bundle information holder.
  *
@@ -36,9 +42,12 @@ class BundleInfo {
 
     private final String bundleVersion;
 
-    BundleInfo(String bundleName, String symbolicName, String bundleVersion) {
+    BundleInfo(Attributes mainAttributes) {
+        String bundleName = mainAttributes.getValue(BUNDLE_NAME);
+        String symbolicName = mainAttributes.getValue(BUNDLE_SYMBOLIC_NAME);
         Validate.isTrue(StringUtils.isNotEmpty(symbolicName), "Bundle symbolic name is null!!");
         Validate.isTrue(StringUtils.isNotEmpty(bundleName), "Artifact is not a Bundle!!");
+        String bundleVersion = mainAttributes.getValue(BUNDLE_VERSION);
         this.bundleName = bundleName;
         this.symbolicName = symbolicName;
         this.bundleVersion = bundleVersion;
