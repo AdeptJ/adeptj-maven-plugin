@@ -27,7 +27,7 @@
     <packaging>maven-plugin</packaging>
     <name>AdeptJ :: Maven Plugin</name>
     <description>AdeptJ Maven Plugin for Supporting Bundle Development</description>
-    <url>http://www.adeptj.com</url>
+    <url>https://www.adeptj.com</url>
     <inceptionYear>2016</inceptionYear>
 
     <properties>
@@ -35,15 +35,15 @@
         <jdk.release.version>11</jdk.release.version>
         <commons-lang.version>3.12.0</commons-lang.version>
         <commons-codec.version>1.15</commons-codec.version>
-        <httpcore5.version>5.1</httpcore5.version>
-        <httpcore5-h2.version>5.1</httpcore5-h2.version>
-        <httpclient5.version>5.1-beta1</httpclient5.version>
+        <httpcore5.version>5.1.1</httpcore5.version>
+        <httpcore5-h2.version>5.1.1</httpcore5-h2.version>
+        <httpclient5.version>5.1</httpclient5.version>
         <slf4j.version>1.7.30</slf4j.version>
         <shrinkwrap.version>3.1.4</shrinkwrap.version>
         <maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
         <maven-plugin-plugin.version>3.6.0</maven-plugin-plugin.version>
-        <maven-plugin-api.version>3.6.3</maven-plugin-api.version>
-        <maven-plugin-annotations.version>3.6.0</maven-plugin-annotations.version>
+        <maven-plugin-api.version>3.8.1</maven-plugin-api.version>
+        <maven-plugin-annotations.version>3.6.1</maven-plugin-annotations.version>
         <maven-surefire-plugin.version>3.0.0-M5</maven-surefire-plugin.version>
         <maven-failsafe-plugin.version>3.0.0-M5</maven-failsafe-plugin.version>
         <maven-enforcer-plugin.version>3.0.0-M3</maven-enforcer-plugin.version>
@@ -59,13 +59,13 @@
     <!-- Project Information -->
     <organization>
         <name>AdeptJ</name>
-        <url>http://www.adeptj.com</url>
+        <url>https://www.adeptj.com</url>
     </organization>
 
     <licenses>
         <license>
             <name>Apache License Version 2.0</name>
-            <url>http://www.apache.org/licenses/LICENSE-2.0.html</url>
+            <url>https://www.apache.org/licenses/LICENSE-2.0.html</url>
             <distribution>repo</distribution>
         </license>
     </licenses>
@@ -77,7 +77,7 @@
             <email>irakeshk@outlook.com</email>
             <url>https://www.linkedin.com/in/iamrakesh</url>
             <organization>AdeptJ</organization>
-            <organizationUrl>http://www.adeptj.com</organizationUrl>
+            <organizationUrl>https://www.adeptj.com</organizationUrl>
             <roles>
                 <role>architect</role>
                 <role>developer</role>
