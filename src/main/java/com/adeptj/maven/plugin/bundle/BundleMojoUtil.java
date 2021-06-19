@@ -20,10 +20,12 @@
 
 package com.adeptj.maven.plugin.bundle;
 
-import org.apache.hc.client5.http.entity.mime.MultipartEntityBuilder;
-import org.apache.hc.core5.http.HttpEntity;
+import org.eclipse.jetty.client.util.MultiPartRequestContent;
+import org.eclipse.jetty.client.util.PathRequestContent;
+import org.eclipse.jetty.client.util.StringRequestContent;
 
 import java.io.File;
+import java.io.IOException;
 
 import static com.adeptj.maven.plugin.bundle.Constants.PARAM_ACTION;
 import static com.adeptj.maven.plugin.bundle.Constants.PARAM_ACTION_INSTALL_VALUE;
@@ -33,7 +35,6 @@ import static com.adeptj.maven.plugin.bundle.Constants.PARAM_REFRESH_PACKAGES;
 import static com.adeptj.maven.plugin.bundle.Constants.PARAM_START;
 import static com.adeptj.maven.plugin.bundle.Constants.PARAM_START_LEVEL;
 import static com.adeptj.maven.plugin.bundle.Constants.VALUE_TRUE;
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Utility methods.
@@ -45,23 +46,25 @@ final class BundleMojoUtil {
     private BundleMojoUtil() {
     }
 
-    static HttpEntity newMultipartEntity(File bundle, String startLevel,
-                                         boolean startBundle, boolean refreshPackages, boolean parallelVersion) {
-        MultipartEntityBuilder multipartEntityBuilder = MultipartEntityBuilder.create()
-                .setCharset(UTF_8)
-                .addBinaryBody(PARAM_BUNDLE_FILE, bundle)
-                .addTextBody(PARAM_ACTION, PARAM_ACTION_INSTALL_VALUE)
-                .addTextBody(PARAM_START_LEVEL, startLevel);
+    static MultiPartRequestContent newMultipartRequestContent(File bundle, String startLevel, boolean startBundle,
+                                                              boolean refreshPackages,
+                                                              boolean parallelVersion) throws IOException {
+        MultiPartRequestContent content = new MultiPartRequestContent();
+        content.addFieldPart(PARAM_ACTION, new StringRequestContent(PARAM_ACTION_INSTALL_VALUE), null);
+        content.addFieldPart(PARAM_START_LEVEL, new StringRequestContent(startLevel), null);
+        content.addFilePart(PARAM_BUNDLE_FILE, bundle.getName(), new PathRequestContent(bundle.toPath()), null);
         if (startBundle) {
-            multipartEntityBuilder.addTextBody(PARAM_START, VALUE_TRUE);
+            content.addFieldPart(PARAM_START, new StringRequestContent(VALUE_TRUE), null);
         }
         if (refreshPackages) {
-            multipartEntityBuilder.addTextBody(PARAM_REFRESH_PACKAGES, VALUE_TRUE);
+            content.addFieldPart(PARAM_REFRESH_PACKAGES, new StringRequestContent(VALUE_TRUE), null);
         }
         // Since web console v4.4.0
         if (parallelVersion) {
-            multipartEntityBuilder.addTextBody(PARAM_PARALLEL_VERSION, VALUE_TRUE);
+            content.addFieldPart(PARAM_PARALLEL_VERSION, new StringRequestContent(VALUE_TRUE), null);
         }
-        return multipartEntityBuilder.build();
+        // MultiPartRequestContent must be closed before sending request.
+        content.close();
+        return content;
     }
 }

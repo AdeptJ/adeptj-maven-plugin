@@ -29,8 +29,6 @@ import org.eclipse.jetty.client.api.ContentResponse;
 import org.eclipse.jetty.client.api.Request;
 import org.eclipse.jetty.client.util.FormRequestContent;
 import org.eclipse.jetty.client.util.MultiPartRequestContent;
-import org.eclipse.jetty.client.util.PathRequestContent;
-import org.eclipse.jetty.client.util.StringRequestContent;
 import org.eclipse.jetty.http.HttpMethod;
 import org.eclipse.jetty.http.HttpStatus;
 import org.eclipse.jetty.util.Fields;
@@ -46,13 +44,6 @@ import static com.adeptj.maven.plugin.bundle.Constants.DEFAULT_CONSOLE_URL;
 import static com.adeptj.maven.plugin.bundle.Constants.DEFAULT_LOGOUT_URL;
 import static com.adeptj.maven.plugin.bundle.Constants.J_PASSWORD;
 import static com.adeptj.maven.plugin.bundle.Constants.J_USERNAME;
-import static com.adeptj.maven.plugin.bundle.Constants.PARAM_ACTION;
-import static com.adeptj.maven.plugin.bundle.Constants.PARAM_ACTION_INSTALL_VALUE;
-import static com.adeptj.maven.plugin.bundle.Constants.PARAM_BUNDLE_FILE;
-import static com.adeptj.maven.plugin.bundle.Constants.PARAM_PARALLEL_VERSION;
-import static com.adeptj.maven.plugin.bundle.Constants.PARAM_REFRESH_PACKAGES;
-import static com.adeptj.maven.plugin.bundle.Constants.PARAM_START;
-import static com.adeptj.maven.plugin.bundle.Constants.PARAM_START_LEVEL;
 import static com.adeptj.maven.plugin.bundle.Constants.URL_BUNDLE_INSTALL;
 import static com.adeptj.maven.plugin.bundle.Constants.VALUE_FALSE;
 import static com.adeptj.maven.plugin.bundle.Constants.VALUE_TRUE;
@@ -158,22 +149,10 @@ abstract class AbstractBundleMojo extends AbstractMojo {
         try {
             Request request = this.httpClient.newRequest(String.format(URL_BUNDLE_INSTALL, this.consoleUrl))
                     .method(HttpMethod.POST);
-            MultiPartRequestContent content = new MultiPartRequestContent();
-            content.addFieldPart(PARAM_ACTION, new StringRequestContent(PARAM_ACTION_INSTALL_VALUE), null);
-            content.addFieldPart(PARAM_START_LEVEL, new StringRequestContent(this.startLevel), null);
-            content.addFilePart(PARAM_BUNDLE_FILE, bundle.getName(), new PathRequestContent(bundle.toPath()), null);
-            if (this.startBundle) {
-                content.addFieldPart(PARAM_START, new StringRequestContent(VALUE_TRUE), null);
-            }
-            if (this.refreshPackages) {
-                content.addFieldPart(PARAM_REFRESH_PACKAGES, new StringRequestContent(VALUE_TRUE), null);
-            }
-            // Since web console v4.4.0
-            if (this.parallelVersion) {
-                content.addFieldPart(PARAM_PARALLEL_VERSION, new StringRequestContent(VALUE_TRUE), null);
-            }
-            // MultiPartRequestContent must be closed before sending request.
-            content.close();
+            MultiPartRequestContent content = BundleMojoUtil.newMultipartRequestContent(bundle, this.startLevel,
+                    this.startBundle,
+                    this.refreshPackages,
+                    this.parallelVersion);
             ContentResponse response = request.body(content).send();
             if (response.getStatus() == HttpStatus.OK_200) {
                 this.getLog().info("Bundle installed successfully, please check AdeptJ OSGi Web Console"
