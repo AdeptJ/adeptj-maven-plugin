@@ -21,26 +21,23 @@
 package com.adeptj.maven.plugin.bundle;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.hc.client5.http.classic.methods.HttpGet;
-import org.apache.hc.client5.http.classic.methods.HttpPost;
-import org.apache.hc.client5.http.cookie.BasicCookieStore;
-import org.apache.hc.client5.http.cookie.CookieStore;
-import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
-import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
-import org.apache.hc.client5.http.impl.classic.HttpClients;
-import org.apache.hc.core5.http.NameValuePair;
-import org.apache.hc.core5.http.io.entity.EntityUtils;
-import org.apache.hc.core5.http.io.entity.HttpEntities;
-import org.apache.hc.core5.http.message.BasicNameValuePair;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Parameter;
+import org.eclipse.jetty.client.HttpClient;
+import org.eclipse.jetty.client.api.ContentResponse;
+import org.eclipse.jetty.client.api.Request;
+import org.eclipse.jetty.client.util.FormRequestContent;
+import org.eclipse.jetty.client.util.MultiPartRequestContent;
+import org.eclipse.jetty.client.util.PathRequestContent;
+import org.eclipse.jetty.client.util.StringRequestContent;
+import org.eclipse.jetty.http.HttpMethod;
+import org.eclipse.jetty.http.HttpStatus;
+import org.eclipse.jetty.util.Fields;
+import org.eclipse.jetty.util.HttpCookieStore;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.jar.JarFile;
 
 import static com.adeptj.maven.plugin.bundle.Constants.COOKIE_JSESSIONID;
@@ -49,11 +46,16 @@ import static com.adeptj.maven.plugin.bundle.Constants.DEFAULT_CONSOLE_URL;
 import static com.adeptj.maven.plugin.bundle.Constants.DEFAULT_LOGOUT_URL;
 import static com.adeptj.maven.plugin.bundle.Constants.J_PASSWORD;
 import static com.adeptj.maven.plugin.bundle.Constants.J_USERNAME;
+import static com.adeptj.maven.plugin.bundle.Constants.PARAM_ACTION;
+import static com.adeptj.maven.plugin.bundle.Constants.PARAM_ACTION_INSTALL_VALUE;
+import static com.adeptj.maven.plugin.bundle.Constants.PARAM_BUNDLE_FILE;
+import static com.adeptj.maven.plugin.bundle.Constants.PARAM_PARALLEL_VERSION;
+import static com.adeptj.maven.plugin.bundle.Constants.PARAM_REFRESH_PACKAGES;
+import static com.adeptj.maven.plugin.bundle.Constants.PARAM_START;
+import static com.adeptj.maven.plugin.bundle.Constants.PARAM_START_LEVEL;
 import static com.adeptj.maven.plugin.bundle.Constants.URL_BUNDLE_INSTALL;
 import static com.adeptj.maven.plugin.bundle.Constants.VALUE_FALSE;
 import static com.adeptj.maven.plugin.bundle.Constants.VALUE_TRUE;
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.apache.hc.core5.http.HttpStatus.SC_OK;
 
 /**
  * Base for various bundle mojo implementations.
@@ -99,34 +101,39 @@ abstract class AbstractBundleMojo extends AbstractMojo {
     @Parameter(property = "adeptj.password", defaultValue = "admin", required = true)
     private String password;
 
-    private final CookieStore cookieStore;
-
-    final CloseableHttpClient httpClient;
-
     private boolean loginSucceeded;
 
+    protected final HttpClient httpClient;
+
     public AbstractBundleMojo() {
-        this.cookieStore = new BasicCookieStore();
-        this.httpClient = HttpClients.custom()
-                .disableRedirectHandling()
-                .setDefaultCookieStore(this.cookieStore)
-                .build();
+        this.httpClient = new HttpClient();
+        this.httpClient.setCookieStore(new HttpCookieStore());
+        try {
+            this.httpClient.start();
+            this.getLog().info("Using Jetty HttpClient!!");
+        } catch (Exception ex) {
+            throw new IllegalStateException(ex);
+        }
     }
 
     boolean login() {
         try {
-            HttpPost request = new HttpPost(this.authUrl);
-            List<NameValuePair> form = new ArrayList<>();
-            form.add(new BasicNameValuePair(J_USERNAME, this.user));
-            form.add(new BasicNameValuePair(J_PASSWORD, this.password));
-            request.setEntity(HttpEntities.createUrlEncoded(form, UTF_8));
-            try (CloseableHttpResponse response = this.httpClient.execute(request)) {
-                EntityUtils.consumeQuietly(response.getEntity());
-                this.loginSucceeded = this.cookieStore.getCookies()
+            Request request = this.httpClient.newRequest(this.authUrl).method(HttpMethod.POST);
+            Fields fields = new Fields();
+            fields.put(J_USERNAME, this.user);
+            fields.put(J_PASSWORD, this.password);
+            request.body(new FormRequestContent(fields));
+            ContentResponse response = request.send();
+            if (response.getStatus() == HttpStatus.OK_200) {
+                this.loginSucceeded = this.httpClient.getCookieStore()
+                        .getCookies()
                         .stream()
                         .anyMatch(cookie -> StringUtils.startsWith(cookie.getName(), COOKIE_JSESSIONID));
+                if (this.loginSucceeded) {
+                    this.getLog().info("Login Successful!!");
+                }
             }
-        } catch (IOException ex) {
+        } catch (Exception ex) {
             throw new BundleMojoException(ex);
         }
         return this.loginSucceeded;
@@ -134,26 +141,41 @@ abstract class AbstractBundleMojo extends AbstractMojo {
 
     void logout() {
         if (this.loginSucceeded) {
-            this.getLog().debug("Invoking Logout!!");
-            try (CloseableHttpResponse response = this.httpClient.execute(new HttpGet(this.logoutUrl))) {
-                this.getLog().debug("Logout status code: " + response.getCode());
-                this.getLog().debug("Logout successful!!");
-                EntityUtils.consumeQuietly(response.getEntity());
-                this.cookieStore.clear();
-            } catch (IOException ex) {
+            this.getLog().info("Invoking Logout!!");
+            try {
+                Request request = this.httpClient.newRequest(this.logoutUrl).method(HttpMethod.GET);
+                ContentResponse response = request.send();
+                this.getLog().info("Logout status code: " + response.getStatus());
+                this.getLog().info("Logout successful!!");
+                this.httpClient.getCookieStore().removeAll();
+            } catch (Exception ex) {
                 this.getLog().error(ex);
             }
         }
     }
 
-    void installBundle(File bundle) throws IOException, MojoExecutionException {
-        HttpPost request = new HttpPost(URI.create(String.format(URL_BUNDLE_INSTALL, this.consoleUrl)));
-        request.setEntity(BundleMojoUtil.newMultipartEntity(bundle, this.startLevel, this.startBundle,
-                this.refreshPackages,
-                this.parallelVersion));
-        try (CloseableHttpResponse response = this.httpClient.execute(request)) {
-            if (response.getCode() == SC_OK) {
-                EntityUtils.consume(response.getEntity());
+    void installBundle(File bundle) {
+        try {
+            Request request = this.httpClient.newRequest(String.format(URL_BUNDLE_INSTALL, this.consoleUrl))
+                    .method(HttpMethod.POST);
+            MultiPartRequestContent content = new MultiPartRequestContent();
+            content.addFieldPart(PARAM_ACTION, new StringRequestContent(PARAM_ACTION_INSTALL_VALUE), null);
+            content.addFieldPart(PARAM_START_LEVEL, new StringRequestContent(this.startLevel), null);
+            content.addFilePart(PARAM_BUNDLE_FILE, bundle.getName(), new PathRequestContent(bundle.toPath()), null);
+            if (this.startBundle) {
+                content.addFieldPart(PARAM_START, new StringRequestContent(VALUE_TRUE), null);
+            }
+            if (this.refreshPackages) {
+                content.addFieldPart(PARAM_REFRESH_PACKAGES, new StringRequestContent(VALUE_TRUE), null);
+            }
+            // Since web console v4.4.0
+            if (this.parallelVersion) {
+                content.addFieldPart(PARAM_PARALLEL_VERSION, new StringRequestContent(VALUE_TRUE), null);
+            }
+            request.body(content);
+            content.close();
+            ContentResponse response = request.send();
+            if (response.getStatus() == HttpStatus.OK_200) {
                 this.getLog().info("Bundle installed successfully, please check AdeptJ OSGi Web Console"
                         + " [" + this.consoleUrl + "/bundles" + "]");
                 return;
@@ -161,19 +183,21 @@ abstract class AbstractBundleMojo extends AbstractMojo {
             if (this.failOnError) {
                 throw new MojoExecutionException(
                         String.format("Bundle installation failed, reason: [%s], status: [%s]",
-                                response.getReasonPhrase(),
-                                response.getCode()));
+                                response.getReason(),
+                                response.getStatus()));
             }
             this.getLog().warn("Problem installing bundle, please check AdeptJ OSGi Web Console!!");
+        } catch (Exception ex) {
+            throw new IllegalStateException(ex);
         }
     }
 
     void closeHttpClient() {
         try {
-            this.cookieStore.clear();
-            this.httpClient.close();
+            this.httpClient.getCookieStore().removeAll();
+            this.httpClient.stop();
             this.getLog().debug("HttpClient closed!!");
-        } catch (IOException ex) {
+        } catch (Exception ex) {
             this.getLog().error(ex);
         }
     }

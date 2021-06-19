@@ -38,6 +38,7 @@
         <httpcore5.version>5.1.1</httpcore5.version>
         <httpcore5-h2.version>5.1.1</httpcore5-h2.version>
         <httpclient5.version>5.1</httpclient5.version>
+        <jetty-client.version>11.0.5</jetty-client.version>
         <slf4j.version>1.7.30</slf4j.version>
         <shrinkwrap.version>3.1.4</shrinkwrap.version>
         <maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
@@ -287,6 +288,41 @@
                     <artifactId>slf4j-api</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-client</artifactId>
+            <version>${jetty-client.version}</version>
+            <scope>compile</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-http</artifactId>
+            <version>${jetty-client.version}</version>
+            <scope>compile</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-util</artifactId>
+            <version>${jetty-client.version}</version>
+            <scope>compile</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-io</artifactId>
+            <version>${jetty-client.version}</version>
+            <scope>compile</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-alpn-client</artifactId>
+            <version>${jetty-client.version}</version>
+            <scope>compile</scope>
         </dependency>
 
         <!-- Needed by httpclient5 -->

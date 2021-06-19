@@ -20,28 +20,24 @@
 
 package com.adeptj.maven.plugin.bundle;
 
-import org.apache.hc.client5.http.classic.methods.HttpPost;
-import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
-import org.apache.hc.core5.http.NameValuePair;
-import org.apache.hc.core5.http.io.entity.EntityUtils;
-import org.apache.hc.core5.http.io.entity.HttpEntities;
-import org.apache.hc.core5.http.message.BasicNameValuePair;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
+import org.eclipse.jetty.client.api.ContentResponse;
+import org.eclipse.jetty.client.api.Request;
+import org.eclipse.jetty.client.util.FormRequestContent;
+import org.eclipse.jetty.http.HttpMethod;
+import org.eclipse.jetty.http.HttpStatus;
+import org.eclipse.jetty.util.Fields;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.List;
 
 import static com.adeptj.maven.plugin.bundle.BundleMojoOp.UNINSTALL;
 import static com.adeptj.maven.plugin.bundle.BundleUninstallMojo.MOJO_NAME;
 import static com.adeptj.maven.plugin.bundle.Constants.PARAM_ACTION;
 import static com.adeptj.maven.plugin.bundle.Constants.PARAM_ACTION_UNINSTALL_VALUE;
 import static com.adeptj.maven.plugin.bundle.Constants.URL_BUNDLE_UNINSTALL;
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.apache.hc.core5.http.HttpStatus.SC_OK;
 
 /**
  * Mojo for uninstall an OSGi bundle from a running AdeptJ Runtime instance.
@@ -80,26 +76,28 @@ public class BundleUninstallMojo extends AbstractBundleMojo {
         }
     }
 
-    private void uninstallBundle(BundleInfo info) throws IOException, MojoExecutionException {
+    private void uninstallBundle(BundleInfo info) {
         URI uri = URI.create(String.format(URL_BUNDLE_UNINSTALL, this.consoleUrl, info.getSymbolicName()));
-        HttpPost request = new HttpPost(uri);
-        List<NameValuePair> form = new ArrayList<>();
-        form.add(new BasicNameValuePair(PARAM_ACTION, PARAM_ACTION_UNINSTALL_VALUE));
-        request.setEntity(HttpEntities.createUrlEncoded(form, UTF_8));
-        try (CloseableHttpResponse response = this.httpClient.execute(request)) {
-            if (response.getCode() == SC_OK) {
-                EntityUtils.consume(response.getEntity());
+        Request request = this.httpClient.newRequest(uri).method(HttpMethod.POST);
+        Fields fields = new Fields();
+        fields.put(PARAM_ACTION, PARAM_ACTION_UNINSTALL_VALUE);
+        request.body(new FormRequestContent(fields));
+        try {
+            ContentResponse response = request.send();
+            if (response.getStatus() == HttpStatus.OK_200) {
                 this.getLog().info("Bundle uninstalled successfully, please check AdeptJ OSGi Web Console"
                         + " [" + this.consoleUrl + "/bundles" + "]");
             } else {
                 if (this.failOnError) {
                     throw new MojoExecutionException(
                             String.format("Couldn't uninstall bundle , reason: [%s], status: [%s]",
-                                    response.getReasonPhrase(),
-                                    response.getCode()));
+                                    response.getReason(),
+                                    response.getStatus()));
                 }
                 this.getLog().error("Problem uninstalling bundle, please check AdeptJ OSGi Web Console!!");
             }
+        } catch (Exception ex) {
+            throw new IllegalStateException(ex);
         }
     }
 }
