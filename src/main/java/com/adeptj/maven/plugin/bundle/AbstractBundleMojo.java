@@ -172,9 +172,9 @@ abstract class AbstractBundleMojo extends AbstractMojo {
             if (this.parallelVersion) {
                 content.addFieldPart(PARAM_PARALLEL_VERSION, new StringRequestContent(VALUE_TRUE), null);
             }
-            request.body(content);
+            // MultiPartRequestContent must be closed before sending request.
             content.close();
-            ContentResponse response = request.send();
+            ContentResponse response = request.body(content).send();
             if (response.getStatus() == HttpStatus.OK_200) {
                 this.getLog().info("Bundle installed successfully, please check AdeptJ OSGi Web Console"
                         + " [" + this.consoleUrl + "/bundles" + "]");
