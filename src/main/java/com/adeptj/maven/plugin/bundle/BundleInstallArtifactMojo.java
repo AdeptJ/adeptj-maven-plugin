@@ -41,21 +41,25 @@ public class BundleInstallArtifactMojo extends AbstractBundleMojo {
 
     private static final String GAV_FMT = "%s:%s:%s";
 
-    @Parameter(property = "adeptj.artifact.groupId")
+    @Parameter(property = "adeptj.artifact.groupId", required = true)
     private String groupId;
 
-    @Parameter(property = "adeptj.artifact.artifactId")
+    @Parameter(property = "adeptj.artifact.artifactId", required = true)
     private String artifactId;
 
-    @Parameter(property = "adeptj.artifact.version")
+    @Parameter(property = "adeptj.artifact.version", required = true)
     private String version;
 
     @Override
     public void execute() throws MojoExecutionException {
+        String gavFmt = String.format(GAV_FMT, this.groupId, this.artifactId, this.version);
         File bundle = Maven.resolver()
-                .resolve(String.format(GAV_FMT, this.groupId, this.artifactId, this.version))
+                .resolve(gavFmt)
                 .withoutTransitivity()
                 .asSingleFile();
+        if (bundle == null) {
+            throw new MojoExecutionException(String.format("Maven artifact with GAV[%s] not found!", gavFmt));
+        }
         try {
             this.logBundleInfo(this.getBundleInfo(bundle), INSTALL);
             // First login, then while installing bundle, HttpClient will pass the JSESSIONID received
