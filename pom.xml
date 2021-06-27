@@ -38,7 +38,7 @@
         <httpcore5.version>5.1.1</httpcore5.version>
         <httpcore5-h2.version>5.1.1</httpcore5-h2.version>
         <httpclient5.version>5.1</httpclient5.version>
-        <slf4j.version>1.7.30</slf4j.version>
+        <slf4j.version>1.7.31</slf4j.version>
         <shrinkwrap.version>3.1.4</shrinkwrap.version>
         <maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
         <maven-plugin-plugin.version>3.6.1</maven-plugin-plugin.version>
@@ -50,7 +50,7 @@
         <maven-jar-plugin.version>3.2.0</maven-jar-plugin.version>
         <maven-gpg-plugin.version>3.0.1</maven-gpg-plugin.version>
         <maven-source-plugin.version>3.2.1</maven-source-plugin.version>
-        <maven-javadoc-plugin.version>3.2.0</maven-javadoc-plugin.version>
+        <maven-javadoc-plugin.version>3.3.0</maven-javadoc-plugin.version>
         <maven-deploy-plugin.version>3.0.0-M1</maven-deploy-plugin.version>
         <nexus-staging-maven-plugin.version>1.6.8</nexus-staging-maven-plugin.version>
         <versions-maven-plugin.version>2.8.1</versions-maven-plugin.version>
