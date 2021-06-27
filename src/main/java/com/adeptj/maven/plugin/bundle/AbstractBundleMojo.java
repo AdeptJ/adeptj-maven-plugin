@@ -98,6 +98,7 @@ abstract class AbstractBundleMojo extends AbstractMojo {
 
     public AbstractBundleMojo() {
         this.httpClient = new HttpClient();
+        this.httpClient.setFollowRedirects(false);
         this.httpClient.setCookieStore(new HttpCookieStore());
         try {
             this.httpClient.start();
