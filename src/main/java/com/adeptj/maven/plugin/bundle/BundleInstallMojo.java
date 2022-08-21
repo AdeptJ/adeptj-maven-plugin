@@ -22,11 +22,17 @@ package com.adeptj.maven.plugin.bundle;
 
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
+import org.eclipse.jetty.client.api.ContentResponse;
+import org.eclipse.jetty.client.api.Request;
+import org.eclipse.jetty.client.util.MultiPartRequestContent;
+import org.eclipse.jetty.http.HttpMethod;
+import org.eclipse.jetty.http.HttpStatus;
 
 import java.io.File;
 import java.io.IOException;
 
 import static com.adeptj.maven.plugin.bundle.BundleInstallMojo.MOJO_NAME;
+import static com.adeptj.maven.plugin.bundle.Constants.URL_BUNDLE_INSTALL;
 import static org.apache.maven.plugins.annotations.LifecyclePhase.INSTALL;
 
 /**
@@ -43,7 +49,8 @@ public class BundleInstallMojo extends AbstractBundleMojo {
     public void execute() throws MojoExecutionException {
         File bundle = new File(this.bundleFileName);
         try {
-            this.logBundleInfo(this.getBundleInfo(bundle), BundleMojoOp.INSTALL);
+            BundleInfo info = this.getBundleInfo(bundle);
+            this.getLog().info("Installing " + info);
             // First login, then while installing bundle, HttpClient will pass the JSESSIONID received
             // in the Set-Cookie header in the auth call. if authentication fails, discontinue the further execution.
             if (this.login()) {
@@ -61,6 +68,32 @@ public class BundleInstallMojo extends AbstractBundleMojo {
         } finally {
             this.logout();
             this.closeHttpClient();
+        }
+    }
+
+    void installBundle(File bundle) {
+        try {
+            Request request = this.httpClient.newRequest(String.format(URL_BUNDLE_INSTALL, this.consoleUrl))
+                    .method(HttpMethod.POST);
+            MultiPartRequestContent content = BundleMojoUtil.newMultipartRequestContent(bundle, this.startLevel,
+                    this.startBundle,
+                    this.refreshPackages,
+                    this.parallelVersion);
+            ContentResponse response = request.body(content).send();
+            if (response.getStatus() == HttpStatus.OK_200) {
+                this.getLog().info("Bundle installed successfully, please check AdeptJ OSGi Web Console"
+                        + " [" + this.consoleUrl + "/bundles" + "]");
+                return;
+            }
+            if (this.failOnError) {
+                throw new MojoExecutionException(
+                        String.format("Bundle installation failed, reason: [%s], status: [%s]",
+                                response.getReason(),
+                                response.getStatus()));
+            }
+            this.getLog().warn("Problem installing bundle, please check AdeptJ OSGi Web Console!!");
+        } catch (Exception ex) {
+            throw new IllegalStateException(ex);
         }
     }
 }

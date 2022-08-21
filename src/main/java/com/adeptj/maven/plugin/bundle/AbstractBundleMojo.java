@@ -22,13 +22,11 @@ package com.adeptj.maven.plugin.bundle;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.maven.plugin.AbstractMojo;
-import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.api.ContentResponse;
 import org.eclipse.jetty.client.api.Request;
 import org.eclipse.jetty.client.util.FormRequestContent;
-import org.eclipse.jetty.client.util.MultiPartRequestContent;
 import org.eclipse.jetty.http.HttpMethod;
 import org.eclipse.jetty.http.HttpStatus;
 import org.eclipse.jetty.util.Fields;
@@ -44,7 +42,6 @@ import static com.adeptj.maven.plugin.bundle.Constants.DEFAULT_CONSOLE_URL;
 import static com.adeptj.maven.plugin.bundle.Constants.DEFAULT_LOGOUT_URL;
 import static com.adeptj.maven.plugin.bundle.Constants.J_PASSWORD;
 import static com.adeptj.maven.plugin.bundle.Constants.J_USERNAME;
-import static com.adeptj.maven.plugin.bundle.Constants.URL_BUNDLE_INSTALL;
 import static com.adeptj.maven.plugin.bundle.Constants.VALUE_FALSE;
 import static com.adeptj.maven.plugin.bundle.Constants.VALUE_TRUE;
 
@@ -146,32 +143,6 @@ abstract class AbstractBundleMojo extends AbstractMojo {
         }
     }
 
-    void installBundle(File bundle) {
-        try {
-            Request request = this.httpClient.newRequest(String.format(URL_BUNDLE_INSTALL, this.consoleUrl))
-                    .method(HttpMethod.POST);
-            MultiPartRequestContent content = BundleMojoUtil.newMultipartRequestContent(bundle, this.startLevel,
-                    this.startBundle,
-                    this.refreshPackages,
-                    this.parallelVersion);
-            ContentResponse response = request.body(content).send();
-            if (response.getStatus() == HttpStatus.OK_200) {
-                this.getLog().info("Bundle installed successfully, please check AdeptJ OSGi Web Console"
-                        + " [" + this.consoleUrl + "/bundles" + "]");
-                return;
-            }
-            if (this.failOnError) {
-                throw new MojoExecutionException(
-                        String.format("Bundle installation failed, reason: [%s], status: [%s]",
-                                response.getReason(),
-                                response.getStatus()));
-            }
-            this.getLog().warn("Problem installing bundle, please check AdeptJ OSGi Web Console!!");
-        } catch (Exception ex) {
-            throw new IllegalStateException(ex);
-        }
-    }
-
     void closeHttpClient() {
         try {
             this.httpClient.getCookieStore().removeAll();
@@ -182,20 +153,9 @@ abstract class AbstractBundleMojo extends AbstractMojo {
         }
     }
 
-    void logBundleInfo(BundleInfo info, BundleMojoOp op) {
-        switch (op) {
-            case INSTALL:
-                this.getLog().info("Installing " + info);
-                break;
-            case UNINSTALL:
-                this.getLog().info("Uninstalling " + info);
-                break;
-        }
-    }
-
     BundleInfo getBundleInfo(File bundle) throws IOException {
         try (JarFile bundleArchive = new JarFile(bundle)) {
-            return new BundleInfo(bundleArchive.getManifest().getMainAttributes());
+            return new BundleInfo(bundleArchive.getManifest());
         }
     }
 }
