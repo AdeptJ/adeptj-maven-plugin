@@ -33,12 +33,10 @@ import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.apache.hc.core5.http.io.entity.HttpEntities;
 import org.apache.hc.core5.http.message.BasicNameValuePair;
 import org.apache.maven.plugin.AbstractMojo;
-import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Parameter;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.jar.JarFile;
@@ -49,11 +47,9 @@ import static com.adeptj.maven.plugin.bundle.Constants.DEFAULT_CONSOLE_URL;
 import static com.adeptj.maven.plugin.bundle.Constants.DEFAULT_LOGOUT_URL;
 import static com.adeptj.maven.plugin.bundle.Constants.J_PASSWORD;
 import static com.adeptj.maven.plugin.bundle.Constants.J_USERNAME;
-import static com.adeptj.maven.plugin.bundle.Constants.URL_BUNDLE_INSTALL;
 import static com.adeptj.maven.plugin.bundle.Constants.VALUE_FALSE;
 import static com.adeptj.maven.plugin.bundle.Constants.VALUE_TRUE;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.apache.hc.core5.http.HttpStatus.SC_OK;
 
 /**
  * Base for various bundle mojo implementations.
@@ -143,28 +139,6 @@ abstract class AbstractBundleMojo extends AbstractMojo {
             } catch (IOException ex) {
                 this.getLog().error(ex);
             }
-        }
-    }
-
-    void installBundle(File bundle) throws IOException, MojoExecutionException {
-        HttpPost request = new HttpPost(URI.create(String.format(URL_BUNDLE_INSTALL, this.consoleUrl)));
-        request.setEntity(BundleMojoUtil.newMultipartEntity(bundle, this.startLevel, this.startBundle,
-                this.refreshPackages,
-                this.parallelVersion));
-        try (CloseableHttpResponse response = this.httpClient.execute(request)) {
-            if (response.getCode() == SC_OK) {
-                EntityUtils.consume(response.getEntity());
-                this.getLog().info("Bundle installed successfully, please check AdeptJ OSGi Web Console"
-                        + " [" + this.consoleUrl + "/bundles" + "]");
-                return;
-            }
-            if (this.failOnError) {
-                throw new MojoExecutionException(
-                        String.format("Bundle installation failed, reason: [%s], status: [%s]",
-                                response.getReasonPhrase(),
-                                response.getCode()));
-            }
-            this.getLog().warn("Problem installing bundle, please check AdeptJ OSGi Web Console!!");
         }
     }
 
