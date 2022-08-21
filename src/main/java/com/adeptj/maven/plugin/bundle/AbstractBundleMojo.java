@@ -152,20 +152,9 @@ abstract class AbstractBundleMojo extends AbstractMojo {
         }
     }
 
-    void logBundleInfo(BundleInfo info, BundleMojoOp op) {
-        switch (op) {
-            case INSTALL:
-                this.getLog().info("Installing " + info);
-                break;
-            case UNINSTALL:
-                this.getLog().info("Uninstalling " + info);
-                break;
-        }
-    }
-
     BundleInfo getBundleInfo(File bundle) throws IOException {
         try (JarFile bundleArchive = new JarFile(bundle)) {
-            return new BundleInfo(bundleArchive.getManifest().getMainAttributes());
+            return new BundleInfo(bundleArchive.getManifest());
         }
     }
 }

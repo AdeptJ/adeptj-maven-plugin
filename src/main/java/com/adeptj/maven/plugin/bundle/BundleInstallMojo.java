@@ -49,7 +49,8 @@ public class BundleInstallMojo extends AbstractBundleMojo {
     public void execute() throws MojoExecutionException {
         File bundle = new File(this.bundleFileName);
         try {
-            this.logBundleInfo(this.getBundleInfo(bundle), BundleMojoOp.INSTALL);
+            BundleInfo info = this.getBundleInfo(bundle);
+            this.getLog().info("Installing " + info);
             // First login, then while installing bundle, HttpClient will pass the JSESSIONID received
             // in the Set-Cookie header in the auth call. if authentication fails, discontinue the further execution.
             if (this.login()) {

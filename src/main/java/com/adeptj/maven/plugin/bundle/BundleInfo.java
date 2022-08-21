@@ -24,6 +24,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 
 import java.util.jar.Attributes;
+import java.util.jar.Manifest;
 
 import static com.adeptj.maven.plugin.bundle.Constants.BUNDLE_NAME;
 import static com.adeptj.maven.plugin.bundle.Constants.BUNDLE_SYMBOLIC_NAME;
@@ -42,7 +43,8 @@ class BundleInfo {
 
     private final String bundleVersion;
 
-    BundleInfo(Attributes mainAttributes) {
+    BundleInfo(Manifest manifest) {
+        Attributes mainAttributes = manifest.getMainAttributes();
         String bundleName = mainAttributes.getValue(BUNDLE_NAME);
         String symbolicName = mainAttributes.getValue(BUNDLE_SYMBOLIC_NAME);
         Validate.isTrue(StringUtils.isNotEmpty(symbolicName), "Bundle symbolic name is null!!");
