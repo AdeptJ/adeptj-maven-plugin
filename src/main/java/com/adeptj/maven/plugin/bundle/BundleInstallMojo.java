@@ -49,7 +49,7 @@ public class BundleInstallMojo extends AbstractBundleMojo {
     public void doExecute(File bundle, BundleInfo info) throws IOException, MojoExecutionException {
         this.getLog().info("Installing " + info);
         HttpPost request = new HttpPost(URI.create(String.format(URL_BUNDLE_INSTALL, this.consoleUrl)));
-        request.setEntity(BundleMojoUtil.newMultipartEntity(bundle, this.startLevel, this.startBundle,
+        request.setEntity(BundleMojoUtil.newBundleInstallMultipartEntity(bundle, this.startLevel, this.startBundle,
                 this.refreshPackages,
                 this.parallelVersion));
         try (CloseableHttpResponse response = this.httpClient.execute(request)) {
