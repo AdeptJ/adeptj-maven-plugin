@@ -30,6 +30,9 @@ import org.eclipse.jetty.http.HttpStatus;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 
 import static com.adeptj.maven.plugin.bundle.BundleInstallMojo.MOJO_NAME;
 import static com.adeptj.maven.plugin.bundle.Constants.URL_BUNDLE_INSTALL;
@@ -46,39 +49,15 @@ public class BundleInstallMojo extends AbstractBundleMojo {
     static final String MOJO_NAME = "install";
 
     @Override
-    public void execute() throws MojoExecutionException {
-        File bundle = new File(this.bundleFileName);
+    public void doExecute(File bundle, BundleInfo info) throws IOException, MojoExecutionException {
+        this.getLog().info("Installing " + info);
+        URI uri = URI.create(String.format(URL_BUNDLE_INSTALL, this.consoleUrl));
+        Request request = this.httpClient.newRequest(uri).method(HttpMethod.POST);
+        MultiPartRequestContent content = BundleMojoUtil.newBundleInstallMultiPartRequestContent(bundle, this.startLevel,
+                this.startBundle,
+                this.refreshPackages,
+                this.parallelVersion);
         try {
-            BundleInfo info = this.getBundleInfo(bundle);
-            this.getLog().info("Installing " + info);
-            // First login, then while installing bundle, HttpClient will pass the JSESSIONID received
-            // in the Set-Cookie header in the auth call. if authentication fails, discontinue the further execution.
-            if (this.login()) {
-                this.installBundle(bundle);
-                return;
-            }
-            // means authentication was failed.
-            if (this.failOnError) {
-                throw new MojoExecutionException("[Authentication failed, please check credentials!!]");
-            }
-            this.getLog().error("Authentication failed, please check credentials!!");
-        } catch (IOException | BundleMojoException | IllegalArgumentException ex) {
-            this.getLog().error(ex);
-            throw new MojoExecutionException("Installation on [" + this.consoleUrl + "] failed, cause: " + ex.getMessage(), ex);
-        } finally {
-            this.logout();
-            this.closeHttpClient();
-        }
-    }
-
-    void installBundle(File bundle) {
-        try {
-            Request request = this.httpClient.newRequest(String.format(URL_BUNDLE_INSTALL, this.consoleUrl))
-                    .method(HttpMethod.POST);
-            MultiPartRequestContent content = BundleMojoUtil.newMultipartRequestContent(bundle, this.startLevel,
-                    this.startBundle,
-                    this.refreshPackages,
-                    this.parallelVersion);
             ContentResponse response = request.body(content).send();
             if (response.getStatus() == HttpStatus.OK_200) {
                 this.getLog().info("Bundle installed successfully, please check AdeptJ OSGi Web Console"
@@ -91,9 +70,22 @@ public class BundleInstallMojo extends AbstractBundleMojo {
                                 response.getReason(),
                                 response.getStatus()));
             }
-            this.getLog().warn("Problem installing bundle, please check AdeptJ OSGi Web Console!!");
-        } catch (Exception ex) {
-            throw new IllegalStateException(ex);
+            this.getLog().error("Problem installing bundle, please check AdeptJ OSGi Web Console!!");
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+            throw new IOException(ex);
+        } catch (TimeoutException | ExecutionException ex) {
+            throw new IOException(ex);
         }
+    }
+
+    @Override
+    public void handleException(Exception ex) throws MojoExecutionException {
+        this.getLog().error(ex);
+        if (ex instanceof MojoExecutionException) {
+            throw (MojoExecutionException) ex;
+        }
+        throw new MojoExecutionException("Bundle install operation on [" + this.consoleUrl + "] failed, cause: "
+                + ex.getMessage(), ex);
     }
 }

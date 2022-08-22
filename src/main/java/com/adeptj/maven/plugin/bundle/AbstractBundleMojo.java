@@ -22,6 +22,7 @@ package com.adeptj.maven.plugin.bundle;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.maven.plugin.AbstractMojo;
+import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.api.ContentResponse;
@@ -34,6 +35,8 @@ import org.eclipse.jetty.util.HttpCookieStore;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 import java.util.jar.JarFile;
 
 import static com.adeptj.maven.plugin.bundle.Constants.COOKIE_JSESSIONID;
@@ -105,25 +108,45 @@ abstract class AbstractBundleMojo extends AbstractMojo {
         }
     }
 
-    boolean login() {
+    public abstract void doExecute(File bundle, BundleInfo info) throws IOException, MojoExecutionException;
+
+    public abstract void handleException(Exception ex) throws MojoExecutionException;
+
+    @Override
+    public void execute() throws MojoExecutionException {
+        File bundle = new File(this.bundleFileName);
         try {
-            Request request = this.httpClient.newRequest(this.authUrl).method(HttpMethod.POST);
-            Fields fields = new Fields();
-            fields.put(J_USERNAME, this.user);
-            fields.put(J_PASSWORD, this.password);
-            request.body(new FormRequestContent(fields));
-            ContentResponse response = request.send();
-            if (response.getStatus() == HttpStatus.OK_200) {
-                this.loginSucceeded = this.httpClient.getCookieStore()
-                        .getCookies()
-                        .stream()
-                        .anyMatch(cookie -> StringUtils.startsWith(cookie.getName(), COOKIE_JSESSIONID));
-                if (this.loginSucceeded) {
-                    this.getLog().info("Login Successful!!");
-                }
+            BundleInfo info = this.getBundleInfo(bundle);
+            // First login, then while installing bundle, HttpClient will pass the JSESSIONID received
+            // in the Set-Cookie header in the auth call. if authentication fails, discontinue the further execution.
+            if (this.login()) {
+                this.doExecute(bundle, info);
+            } else {
+                this.handleLoginFailure();
             }
-        } catch (Exception ex) {
-            throw new BundleMojoException(ex);
+        } catch (ExecutionException | InterruptedException | TimeoutException | IOException | IllegalArgumentException ex) {
+            this.handleException(ex);
+        } finally {
+            this.logout();
+            this.closeHttpClient();
+        }
+    }
+
+    boolean login() throws ExecutionException, InterruptedException, TimeoutException {
+        Request request = this.httpClient.newRequest(this.authUrl).method(HttpMethod.POST);
+        Fields fields = new Fields();
+        fields.put(J_USERNAME, this.user);
+        fields.put(J_PASSWORD, this.password);
+        request.body(new FormRequestContent(fields));
+        ContentResponse response = request.send();
+        if (response.getStatus() == HttpStatus.OK_200) {
+            this.loginSucceeded = this.httpClient.getCookieStore()
+                    .getCookies()
+                    .stream()
+                    .anyMatch(cookie -> StringUtils.startsWith(cookie.getName(), COOKIE_JSESSIONID));
+            if (this.loginSucceeded) {
+                this.getLog().info("Login Successful!!");
+            }
         }
         return this.loginSucceeded;
     }
@@ -151,6 +174,13 @@ abstract class AbstractBundleMojo extends AbstractMojo {
         } catch (Exception ex) {
             this.getLog().error(ex);
         }
+    }
+
+    void handleLoginFailure() throws MojoExecutionException {
+        if (this.failOnError) {
+            throw new MojoExecutionException("[Authentication failed, please check credentials!!]");
+        }
+        this.getLog().error("Authentication failed, please check credentials!!");
     }
 
     BundleInfo getBundleInfo(File bundle) throws IOException {

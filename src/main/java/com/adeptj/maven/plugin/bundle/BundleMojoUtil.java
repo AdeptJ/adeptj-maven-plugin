@@ -46,9 +46,9 @@ final class BundleMojoUtil {
     private BundleMojoUtil() {
     }
 
-    static MultiPartRequestContent newMultipartRequestContent(File bundle, String startLevel, boolean startBundle,
-                                                              boolean refreshPackages,
-                                                              boolean parallelVersion) throws IOException {
+    static MultiPartRequestContent newBundleInstallMultiPartRequestContent(File bundle, String startLevel, boolean startBundle,
+                                                                           boolean refreshPackages,
+                                                                           boolean parallelVersion) throws IOException {
         MultiPartRequestContent content = new MultiPartRequestContent();
         content.addFieldPart(PARAM_ACTION, new StringRequestContent(PARAM_ACTION_INSTALL_VALUE), null);
         content.addFieldPart(PARAM_START_LEVEL, new StringRequestContent(startLevel), null);

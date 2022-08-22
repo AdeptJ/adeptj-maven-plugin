@@ -32,6 +32,8 @@ import org.eclipse.jetty.util.Fields;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 
 import static com.adeptj.maven.plugin.bundle.BundleUninstallMojo.MOJO_NAME;
 import static com.adeptj.maven.plugin.bundle.Constants.PARAM_ACTION;
@@ -49,33 +51,8 @@ public class BundleUninstallMojo extends AbstractBundleMojo {
     static final String MOJO_NAME = "uninstall";
 
     @Override
-    public void execute() throws MojoExecutionException {
-        File bundle = new File(this.bundleFileName);
-        try {
-            BundleInfo info = this.getBundleInfo(bundle);
-            this.getLog().info("Uninstalling " + info);
-            // First login, then while installing bundle, HttpClient will pass the JSESSIONID received
-            // in the Set-Cookie header in the auth call. if authentication fails, discontinue the further execution.
-            if (this.login()) {
-                this.uninstallBundle(info);
-                return;
-            }
-            // means authentication was failed.
-            if (this.failOnError) {
-                throw new MojoExecutionException("[Authentication failed, please check credentials!!]");
-            }
-            this.getLog().error("Authentication failed, please check credentials!!");
-        } catch (IOException | BundleMojoException | IllegalArgumentException ex) {
-            this.getLog().error(ex);
-            throw new MojoExecutionException("Bundle uninstall operation on [" + this.consoleUrl + "] failed, cause: "
-                    + ex.getMessage(), ex);
-        } finally {
-            this.logout();
-            this.closeHttpClient();
-        }
-    }
-
-    private void uninstallBundle(BundleInfo info) {
+    public void doExecute(File bundle, BundleInfo info) throws IOException, MojoExecutionException {
+        this.getLog().info("Uninstalling " + info);
         URI uri = URI.create(String.format(URL_BUNDLE_UNINSTALL, this.consoleUrl, info.getSymbolicName()));
         Request request = this.httpClient.newRequest(uri).method(HttpMethod.POST);
         Fields fields = new Fields();
@@ -86,17 +63,30 @@ public class BundleUninstallMojo extends AbstractBundleMojo {
             if (response.getStatus() == HttpStatus.OK_200) {
                 this.getLog().info("Bundle uninstalled successfully, please check AdeptJ OSGi Web Console"
                         + " [" + this.consoleUrl + "/bundles" + "]");
-            } else {
-                if (this.failOnError) {
-                    throw new MojoExecutionException(
-                            String.format("Couldn't uninstall bundle , reason: [%s], status: [%s]",
-                                    response.getReason(),
-                                    response.getStatus()));
-                }
-                this.getLog().error("Problem uninstalling bundle, please check AdeptJ OSGi Web Console!!");
+                return;
             }
-        } catch (Exception ex) {
-            throw new IllegalStateException(ex);
+            if (this.failOnError) {
+                throw new MojoExecutionException(
+                        String.format("Couldn't uninstall bundle , reason: [%s], status: [%s]",
+                                response.getReason(),
+                                response.getStatus()));
+            }
+            this.getLog().error("Problem uninstalling bundle, please check AdeptJ OSGi Web Console!!");
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+            throw new IOException(ex);
+        } catch (TimeoutException | ExecutionException ex) {
+            throw new IOException(ex);
         }
+    }
+
+    @Override
+    public void handleException(Exception ex) throws MojoExecutionException {
+        this.getLog().error(ex);
+        if (ex instanceof MojoExecutionException) {
+            throw (MojoExecutionException) ex;
+        }
+        throw new MojoExecutionException("Bundle uninstall operation on [" + this.consoleUrl + "] failed, cause: "
+                + ex.getMessage(), ex);
     }
 }
