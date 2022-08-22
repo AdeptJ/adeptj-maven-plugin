@@ -33,6 +33,7 @@ import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.apache.hc.core5.http.io.entity.HttpEntities;
 import org.apache.hc.core5.http.message.BasicNameValuePair;
 import org.apache.maven.plugin.AbstractMojo;
+import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Parameter;
 
 import java.io.File;
@@ -109,21 +110,41 @@ abstract class AbstractBundleMojo extends AbstractMojo {
                 .build();
     }
 
-    boolean login() {
+    public abstract void doExecute(File bundle, BundleInfo info) throws IOException, MojoExecutionException;
+
+    public abstract void handleException(Exception ex) throws MojoExecutionException;
+
+    @Override
+    public void execute() throws MojoExecutionException {
+        File bundle = new File(this.bundleFileName);
         try {
-            HttpPost request = new HttpPost(this.authUrl);
-            List<NameValuePair> form = new ArrayList<>();
-            form.add(new BasicNameValuePair(J_USERNAME, this.user));
-            form.add(new BasicNameValuePair(J_PASSWORD, this.password));
-            request.setEntity(HttpEntities.createUrlEncoded(form, UTF_8));
-            try (CloseableHttpResponse response = this.httpClient.execute(request)) {
-                EntityUtils.consumeQuietly(response.getEntity());
-                this.loginSucceeded = this.cookieStore.getCookies()
-                        .stream()
-                        .anyMatch(cookie -> StringUtils.startsWith(cookie.getName(), COOKIE_JSESSIONID));
+            BundleInfo info = this.getBundleInfo(bundle);
+            // First login, then while installing bundle, HttpClient will pass the JSESSIONID received
+            // in the Set-Cookie header in the auth call. if authentication fails, discontinue the further execution.
+            if (this.login()) {
+                this.doExecute(bundle, info);
+            } else {
+                this.handleLoginFailure();
             }
-        } catch (IOException ex) {
-            throw new BundleMojoException(ex);
+        } catch (IOException | IllegalArgumentException ex) {
+            this.handleException(ex);
+        } finally {
+            this.logout();
+            this.closeHttpClient();
+        }
+    }
+
+    boolean login() throws IOException {
+        HttpPost request = new HttpPost(this.authUrl);
+        List<NameValuePair> form = new ArrayList<>();
+        form.add(new BasicNameValuePair(J_USERNAME, this.user));
+        form.add(new BasicNameValuePair(J_PASSWORD, this.password));
+        request.setEntity(HttpEntities.createUrlEncoded(form, UTF_8));
+        try (CloseableHttpResponse response = this.httpClient.execute(request)) {
+            EntityUtils.consumeQuietly(response.getEntity());
+            this.loginSucceeded = this.cookieStore.getCookies()
+                    .stream()
+                    .anyMatch(cookie -> StringUtils.startsWith(cookie.getName(), COOKIE_JSESSIONID));
         }
         return this.loginSucceeded;
     }
@@ -156,5 +177,12 @@ abstract class AbstractBundleMojo extends AbstractMojo {
         try (JarFile bundleArchive = new JarFile(bundle)) {
             return new BundleInfo(bundleArchive.getManifest());
         }
+    }
+
+    void handleLoginFailure() throws MojoExecutionException {
+        if (this.failOnError) {
+            throw new MojoExecutionException("[Authentication failed, please check credentials!!]");
+        }
+        this.getLog().error("Authentication failed, please check credentials!!");
     }
 }

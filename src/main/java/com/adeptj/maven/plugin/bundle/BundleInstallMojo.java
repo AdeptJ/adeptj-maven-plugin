@@ -46,32 +46,8 @@ public class BundleInstallMojo extends AbstractBundleMojo {
     static final String MOJO_NAME = "install";
 
     @Override
-    public void execute() throws MojoExecutionException {
-        File bundle = new File(this.bundleFileName);
-        try {
-            BundleInfo info = this.getBundleInfo(bundle);
-            this.getLog().info("Installing " + info);
-            // First login, then while installing bundle, HttpClient will pass the JSESSIONID received
-            // in the Set-Cookie header in the auth call. if authentication fails, discontinue the further execution.
-            if (this.login()) {
-                this.installBundle(bundle);
-                return;
-            }
-            // means authentication was failed.
-            if (this.failOnError) {
-                throw new MojoExecutionException("[Authentication failed, please check credentials!!]");
-            }
-            this.getLog().error("Authentication failed, please check credentials!!");
-        } catch (IOException | BundleMojoException | IllegalArgumentException ex) {
-            this.getLog().error(ex);
-            throw new MojoExecutionException("Installation on [" + this.consoleUrl + "] failed, cause: " + ex.getMessage(), ex);
-        } finally {
-            this.logout();
-            this.closeHttpClient();
-        }
-    }
-
-    void installBundle(File bundle) throws IOException, MojoExecutionException {
+    public void doExecute(File bundle, BundleInfo info) throws IOException, MojoExecutionException {
+        this.getLog().info("Installing " + info);
         HttpPost request = new HttpPost(URI.create(String.format(URL_BUNDLE_INSTALL, this.consoleUrl)));
         request.setEntity(BundleMojoUtil.newMultipartEntity(bundle, this.startLevel, this.startBundle,
                 this.refreshPackages,
@@ -85,11 +61,21 @@ public class BundleInstallMojo extends AbstractBundleMojo {
             }
             if (this.failOnError) {
                 throw new MojoExecutionException(
-                        String.format("Bundle installation failed, reason: [%s], status: [%s]",
+                        String.format("Couldn't install bundle, reason: [%s], status: [%s]",
                                 response.getReasonPhrase(),
                                 response.getCode()));
             }
-            this.getLog().warn("Problem installing bundle, please check AdeptJ OSGi Web Console!!");
+            this.getLog().error("Problem installing bundle, please check AdeptJ OSGi Web Console!!");
         }
+    }
+
+    @Override
+    public void handleException(Exception ex) throws MojoExecutionException {
+        this.getLog().error(ex);
+        if (ex instanceof MojoExecutionException) {
+            throw (MojoExecutionException) ex;
+        }
+        throw new MojoExecutionException("Bundle install operation on [" + this.consoleUrl + "] failed, cause: "
+                + ex.getMessage(), ex);
     }
 }

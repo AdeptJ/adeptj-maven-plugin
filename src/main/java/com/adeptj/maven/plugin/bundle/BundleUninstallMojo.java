@@ -53,33 +53,8 @@ public class BundleUninstallMojo extends AbstractBundleMojo {
     static final String MOJO_NAME = "uninstall";
 
     @Override
-    public void execute() throws MojoExecutionException {
-        File bundle = new File(this.bundleFileName);
-        try {
-            BundleInfo info = this.getBundleInfo(bundle);
-            this.getLog().info("Uninstalling " + info);
-            // First login, then while installing bundle, HttpClient will pass the JSESSIONID received
-            // in the Set-Cookie header in the auth call. if authentication fails, discontinue the further execution.
-            if (this.login()) {
-                this.uninstallBundle(info);
-                return;
-            }
-            // means authentication was failed.
-            if (this.failOnError) {
-                throw new MojoExecutionException("[Authentication failed, please check credentials!!]");
-            }
-            this.getLog().error("Authentication failed, please check credentials!!");
-        } catch (IOException | BundleMojoException | IllegalArgumentException ex) {
-            this.getLog().error(ex);
-            throw new MojoExecutionException("Bundle uninstall operation on [" + this.consoleUrl + "] failed, cause: "
-                    + ex.getMessage(), ex);
-        } finally {
-            this.logout();
-            this.closeHttpClient();
-        }
-    }
-
-    private void uninstallBundle(BundleInfo info) throws IOException, MojoExecutionException {
+    public void doExecute(File bundle, BundleInfo info) throws IOException, MojoExecutionException {
+        this.getLog().info("Uninstalling " + info);
         URI uri = URI.create(String.format(URL_BUNDLE_UNINSTALL, this.consoleUrl, info.getSymbolicName()));
         HttpPost request = new HttpPost(uri);
         List<NameValuePair> form = new ArrayList<>();
@@ -93,12 +68,22 @@ public class BundleUninstallMojo extends AbstractBundleMojo {
             } else {
                 if (this.failOnError) {
                     throw new MojoExecutionException(
-                            String.format("Couldn't uninstall bundle , reason: [%s], status: [%s]",
+                            String.format("Couldn't uninstall bundle, reason: [%s], status: [%s]",
                                     response.getReasonPhrase(),
                                     response.getCode()));
                 }
                 this.getLog().error("Problem uninstalling bundle, please check AdeptJ OSGi Web Console!!");
             }
         }
+    }
+
+    @Override
+    public void handleException(Exception ex) throws MojoExecutionException {
+        this.getLog().error(ex);
+        if (ex instanceof MojoExecutionException) {
+            throw (MojoExecutionException) ex;
+        }
+        throw new MojoExecutionException("Bundle uninstall operation on [" + this.consoleUrl + "] failed, cause: "
+                + ex.getMessage(), ex);
     }
 }
