@@ -71,4 +71,6 @@ public final class Constants {
     static final String BUNDLE_VERSION = "Bundle-Version";
 
     static final String BUNDLE_SYMBOLIC_NAME = "Bundle-SymbolicName";
+
+    static final String RT_ADAPTER_TOMCAT = "tomcat";
 }

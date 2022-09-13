@@ -38,6 +38,7 @@ import org.apache.maven.plugins.annotations.Parameter;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.jar.JarFile;
@@ -48,9 +49,11 @@ import static com.adeptj.maven.plugin.bundle.Constants.DEFAULT_CONSOLE_URL;
 import static com.adeptj.maven.plugin.bundle.Constants.DEFAULT_LOGOUT_URL;
 import static com.adeptj.maven.plugin.bundle.Constants.J_PASSWORD;
 import static com.adeptj.maven.plugin.bundle.Constants.J_USERNAME;
+import static com.adeptj.maven.plugin.bundle.Constants.RT_ADAPTER_TOMCAT;
 import static com.adeptj.maven.plugin.bundle.Constants.VALUE_FALSE;
 import static com.adeptj.maven.plugin.bundle.Constants.VALUE_TRUE;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.apache.hc.core5.http.HttpStatus.SC_OK;
 
 /**
  * Base for various bundle mojo implementations.
@@ -96,6 +99,9 @@ abstract class AbstractBundleMojo extends AbstractMojo {
     @Parameter(property = "adeptj.password", defaultValue = "admin", required = true)
     private String password;
 
+    @Parameter(property = "adeptj.runtime.adapter")
+    private String adapter;
+
     private final CookieStore cookieStore;
 
     final CloseableHttpClient httpClient;
@@ -121,6 +127,7 @@ abstract class AbstractBundleMojo extends AbstractMojo {
             BundleInfo info = this.getBundleInfo(bundle);
             // First login, then while installing bundle, HttpClient will pass the JSESSIONID received
             // in the Set-Cookie header in the auth call. if authentication fails, discontinue the further execution.
+            this.initServerHttpSession();
             if (this.login()) {
                 this.doExecute(bundle, info);
             } else {
@@ -131,6 +138,18 @@ abstract class AbstractBundleMojo extends AbstractMojo {
         } finally {
             this.logout();
             this.closeHttpClient();
+        }
+    }
+
+    private void initServerHttpSession() throws IOException {
+        if (StringUtils.equalsIgnoreCase(this.adapter, RT_ADAPTER_TOMCAT)) {
+            HttpGet consoleReq = new HttpGet(URI.create(this.consoleUrl));
+            try (CloseableHttpResponse response = this.httpClient.execute(consoleReq)) {
+                if (response.getCode() == SC_OK) {
+                    this.getLog().debug("Invoked /system/console so that server HttpSession is initialized!");
+                }
+                EntityUtils.consumeQuietly(response.getEntity());
+            }
         }
     }
 

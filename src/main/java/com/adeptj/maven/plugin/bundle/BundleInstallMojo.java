@@ -22,6 +22,7 @@ package com.adeptj.maven.plugin.bundle;
 
 import org.apache.hc.client5.http.classic.methods.HttpPost;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
+import org.apache.hc.core5.http.HttpEntity;
 import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
@@ -48,10 +49,12 @@ public class BundleInstallMojo extends AbstractBundleMojo {
     @Override
     public void doExecute(File bundle, BundleInfo info) throws IOException, MojoExecutionException {
         this.getLog().info("Installing " + info);
-        HttpPost request = new HttpPost(URI.create(String.format(URL_BUNDLE_INSTALL, this.consoleUrl)));
-        request.setEntity(BundleMojoUtil.newBundleInstallMultipartEntity(bundle, this.startLevel, this.startBundle,
+        URI uri = URI.create(String.format(URL_BUNDLE_INSTALL, this.consoleUrl));
+        HttpPost request = new HttpPost(uri);
+        HttpEntity entity = BundleMojoUtil.newBundleInstallMultipartEntity(bundle, this.startLevel, this.startBundle,
                 this.refreshPackages,
-                this.parallelVersion));
+                this.parallelVersion);
+        request.setEntity(entity);
         try (CloseableHttpResponse response = this.httpClient.execute(request)) {
             if (response.getCode() == SC_OK) {
                 EntityUtils.consume(response.getEntity());
