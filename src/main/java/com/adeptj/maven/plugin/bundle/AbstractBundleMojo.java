@@ -45,6 +45,7 @@ import static com.adeptj.maven.plugin.bundle.Constants.DEFAULT_CONSOLE_URL;
 import static com.adeptj.maven.plugin.bundle.Constants.DEFAULT_LOGOUT_URL;
 import static com.adeptj.maven.plugin.bundle.Constants.J_PASSWORD;
 import static com.adeptj.maven.plugin.bundle.Constants.J_USERNAME;
+import static com.adeptj.maven.plugin.bundle.Constants.RT_ADAPTER_TOMCAT;
 import static com.adeptj.maven.plugin.bundle.Constants.VALUE_FALSE;
 import static com.adeptj.maven.plugin.bundle.Constants.VALUE_TRUE;
 
@@ -92,6 +93,9 @@ abstract class AbstractBundleMojo extends AbstractMojo {
     @Parameter(property = "adeptj.password", defaultValue = "admin", required = true)
     private String password;
 
+    @Parameter(property = "adeptj.runtime.adapter")
+    private String adapter;
+
     private boolean loginSucceeded;
 
     protected final HttpClient httpClient;
@@ -119,6 +123,7 @@ abstract class AbstractBundleMojo extends AbstractMojo {
             BundleInfo info = this.getBundleInfo(bundle);
             // First login, then while installing bundle, HttpClient will pass the JSESSIONID received
             // in the Set-Cookie header in the auth call. if authentication fails, discontinue the further execution.
+            this.initServerHttpSession();
             if (this.login()) {
                 this.doExecute(bundle, info);
             } else {
@@ -132,6 +137,17 @@ abstract class AbstractBundleMojo extends AbstractMojo {
         }
     }
 
+    private void initServerHttpSession() throws ExecutionException, InterruptedException, TimeoutException {
+        if (StringUtils.equalsIgnoreCase(this.adapter, RT_ADAPTER_TOMCAT)) {
+            ContentResponse response = this.httpClient.newRequest(this.consoleUrl)
+                    .method(HttpMethod.GET)
+                    .send();
+            if (HttpStatus.isSuccess(response.getStatus())) {
+                this.getLog().debug("Invoked /system/console so that server HttpSession is initialized!");
+            }
+        }
+    }
+
     boolean login() throws ExecutionException, InterruptedException, TimeoutException {
         Request request = this.httpClient.newRequest(this.authUrl).method(HttpMethod.POST);
         Fields fields = new Fields();
@@ -139,7 +155,8 @@ abstract class AbstractBundleMojo extends AbstractMojo {
         fields.put(J_PASSWORD, this.password);
         request.body(new FormRequestContent(fields));
         ContentResponse response = request.send();
-        if (response.getStatus() == HttpStatus.OK_200) {
+        int status = response.getStatus();
+        if (HttpStatus.isSuccess(status) || HttpStatus.isRedirection(status)) {
             this.loginSucceeded = this.httpClient.getCookieStore()
                     .getCookies()
                     .stream()

@@ -60,7 +60,8 @@ public class BundleUninstallMojo extends AbstractBundleMojo {
         request.body(new FormRequestContent(fields));
         try {
             ContentResponse response = request.send();
-            if (response.getStatus() == HttpStatus.OK_200) {
+            int status = response.getStatus();
+            if (HttpStatus.isSuccess(status)) {
                 this.getLog().info("Bundle uninstalled successfully, please check AdeptJ OSGi Web Console"
                         + " [" + this.consoleUrl + "/bundles" + "]");
                 return;
@@ -68,8 +69,7 @@ public class BundleUninstallMojo extends AbstractBundleMojo {
             if (this.failOnError) {
                 throw new MojoExecutionException(
                         String.format("Couldn't uninstall bundle , reason: [%s], status: [%s]",
-                                response.getReason(),
-                                response.getStatus()));
+                                HttpStatus.getMessage(status), status));
             }
             this.getLog().error("Problem uninstalling bundle, please check AdeptJ OSGi Web Console!!");
         } catch (InterruptedException ex) {

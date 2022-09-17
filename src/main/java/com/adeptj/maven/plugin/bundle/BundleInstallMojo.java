@@ -59,7 +59,8 @@ public class BundleInstallMojo extends AbstractBundleMojo {
                 this.parallelVersion);
         try {
             ContentResponse response = request.body(content).send();
-            if (response.getStatus() == HttpStatus.OK_200) {
+            int status = response.getStatus();
+            if (HttpStatus.isSuccess(status)) {
                 this.getLog().info("Bundle installed successfully, please check AdeptJ OSGi Web Console"
                         + " [" + this.consoleUrl + "/bundles" + "]");
                 return;
@@ -67,8 +68,7 @@ public class BundleInstallMojo extends AbstractBundleMojo {
             if (this.failOnError) {
                 throw new MojoExecutionException(
                         String.format("Bundle installation failed, reason: [%s], status: [%s]",
-                                response.getReason(),
-                                response.getStatus()));
+                                HttpStatus.getMessage(status), status));
             }
             this.getLog().error("Problem installing bundle, please check AdeptJ OSGi Web Console!!");
         } catch (InterruptedException ex) {
