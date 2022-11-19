@@ -21,9 +21,7 @@
 package com.adeptj.maven.plugin.bundle;
 
 import org.apache.hc.client5.http.classic.methods.HttpPost;
-import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
 import org.apache.hc.core5.http.HttpEntity;
-import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
 
@@ -55,9 +53,8 @@ public class BundleInstallMojo extends AbstractBundleMojo {
                 this.refreshPackages,
                 this.parallelVersion);
         request.setEntity(entity);
-        try (CloseableHttpResponse response = this.httpClient.execute(request)) {
+        ClientResponse response = this.httpClient.execute(request, this.responseHandler);
             if (response.getCode() == SC_OK) {
-                EntityUtils.consume(response.getEntity());
                 this.getLog().info("Bundle installed successfully, please check AdeptJ OSGi Web Console"
                         + " [" + this.consoleUrl + "/bundles" + "]");
                 return;
@@ -69,7 +66,6 @@ public class BundleInstallMojo extends AbstractBundleMojo {
                                 response.getCode()));
             }
             this.getLog().error("Problem installing bundle, please check AdeptJ OSGi Web Console!!");
-        }
     }
 
     @Override

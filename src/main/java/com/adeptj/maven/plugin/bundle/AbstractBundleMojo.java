@@ -26,10 +26,9 @@ import org.apache.hc.client5.http.classic.methods.HttpPost;
 import org.apache.hc.client5.http.cookie.BasicCookieStore;
 import org.apache.hc.client5.http.cookie.CookieStore;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
-import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
 import org.apache.hc.core5.http.NameValuePair;
-import org.apache.hc.core5.http.io.entity.EntityUtils;
+import org.apache.hc.core5.http.io.HttpClientResponseHandler;
 import org.apache.hc.core5.http.io.entity.HttpEntities;
 import org.apache.hc.core5.http.message.BasicNameValuePair;
 import org.apache.maven.plugin.AbstractMojo;
@@ -106,6 +105,8 @@ abstract class AbstractBundleMojo extends AbstractMojo {
 
     final CloseableHttpClient httpClient;
 
+    final HttpClientResponseHandler<ClientResponse> responseHandler;
+
     private boolean loginSucceeded;
 
     public AbstractBundleMojo() {
@@ -114,6 +115,7 @@ abstract class AbstractBundleMojo extends AbstractMojo {
                 .disableRedirectHandling()
                 .setDefaultCookieStore(this.cookieStore)
                 .build();
+        this.responseHandler = new ResponseHandler();
     }
 
     public abstract void doExecute(File bundle, BundleInfo info) throws IOException, MojoExecutionException;
@@ -144,11 +146,9 @@ abstract class AbstractBundleMojo extends AbstractMojo {
     private void initServerHttpSession() throws IOException {
         if (StringUtils.equalsIgnoreCase(this.adapter, RT_ADAPTER_TOMCAT)) {
             HttpGet consoleReq = new HttpGet(URI.create(this.consoleUrl));
-            try (CloseableHttpResponse response = this.httpClient.execute(consoleReq)) {
-                if (response.getCode() == SC_OK) {
-                    this.getLog().debug("Invoked /system/console so that server HttpSession is initialized!");
-                }
-                EntityUtils.consumeQuietly(response.getEntity());
+            ClientResponse response = this.httpClient.execute(consoleReq, this.responseHandler);
+            if (response.getCode() == SC_OK) {
+                this.getLog().debug("Invoked /system/console so that server HttpSession is initialized!");
             }
         }
     }
@@ -159,22 +159,21 @@ abstract class AbstractBundleMojo extends AbstractMojo {
         form.add(new BasicNameValuePair(J_USERNAME, this.user));
         form.add(new BasicNameValuePair(J_PASSWORD, this.password));
         request.setEntity(HttpEntities.createUrlEncoded(form, UTF_8));
-        try (CloseableHttpResponse response = this.httpClient.execute(request)) {
-            EntityUtils.consumeQuietly(response.getEntity());
-            this.loginSucceeded = this.cookieStore.getCookies()
-                    .stream()
-                    .anyMatch(cookie -> StringUtils.startsWith(cookie.getName(), COOKIE_JSESSIONID));
-        }
+        ClientResponse response = this.httpClient.execute(request, this.responseHandler);
+        this.getLog().debug("Login status code: " + response.getCode());
+        this.loginSucceeded = this.cookieStore.getCookies()
+                .stream()
+                .anyMatch(cookie -> StringUtils.startsWith(cookie.getName(), COOKIE_JSESSIONID));
         return this.loginSucceeded;
     }
 
     void logout() {
         if (this.loginSucceeded) {
             this.getLog().debug("Invoking Logout!!");
-            try (CloseableHttpResponse response = this.httpClient.execute(new HttpGet(this.logoutUrl))) {
+            try {
+                ClientResponse response = this.httpClient.execute(new HttpGet(this.logoutUrl), this.responseHandler);
                 this.getLog().debug("Logout status code: " + response.getCode());
                 this.getLog().debug("Logout successful!!");
-                EntityUtils.consumeQuietly(response.getEntity());
                 this.cookieStore.clear();
             } catch (IOException ex) {
                 this.getLog().error(ex);

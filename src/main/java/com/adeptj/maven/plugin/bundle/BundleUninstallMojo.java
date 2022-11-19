@@ -21,9 +21,7 @@
 package com.adeptj.maven.plugin.bundle;
 
 import org.apache.hc.client5.http.classic.methods.HttpPost;
-import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
 import org.apache.hc.core5.http.NameValuePair;
-import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.apache.hc.core5.http.io.entity.HttpEntities;
 import org.apache.hc.core5.http.message.BasicNameValuePair;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -60,20 +58,18 @@ public class BundleUninstallMojo extends AbstractBundleMojo {
         List<NameValuePair> form = new ArrayList<>();
         form.add(new BasicNameValuePair(PARAM_ACTION, PARAM_ACTION_UNINSTALL_VALUE));
         request.setEntity(HttpEntities.createUrlEncoded(form, UTF_8));
-        try (CloseableHttpResponse response = this.httpClient.execute(request)) {
-            if (response.getCode() == SC_OK) {
-                EntityUtils.consume(response.getEntity());
-                this.getLog().info("Bundle uninstalled successfully, please check AdeptJ OSGi Web Console"
-                        + " [" + this.consoleUrl + "/bundles" + "]");
-            } else {
-                if (this.failOnError) {
-                    throw new MojoExecutionException(
-                            String.format("Couldn't uninstall bundle, reason: [%s], status: [%s]",
-                                    response.getReasonPhrase(),
-                                    response.getCode()));
-                }
-                this.getLog().error("Problem uninstalling bundle, please check AdeptJ OSGi Web Console!!");
+        ClientResponse response = this.httpClient.execute(request, this.responseHandler);
+        if (response.getCode() == SC_OK) {
+            this.getLog().info("Bundle uninstalled successfully, please check AdeptJ OSGi Web Console"
+                    + " [" + this.consoleUrl + "/bundles" + "]");
+        } else {
+            if (this.failOnError) {
+                throw new MojoExecutionException(
+                        String.format("Couldn't uninstall bundle, reason: [%s], status: [%s]",
+                                response.getReasonPhrase(),
+                                response.getCode()));
             }
+            this.getLog().error("Problem uninstalling bundle, please check AdeptJ OSGi Web Console!!");
         }
     }
 
