@@ -35,11 +35,11 @@
         <jdk.release.version>11</jdk.release.version>
         <commons-lang.version>3.12.0</commons-lang.version>
         <jetty-client.version>11.0.12</jetty-client.version>
-        <slf4j.version>2.0.3</slf4j.version>
+        <slf4j.version>2.0.4</slf4j.version>
         <maven-compiler-plugin.version>3.10.1</maven-compiler-plugin.version>
         <maven-plugin-plugin.version>3.6.4</maven-plugin-plugin.version>
         <maven-plugin-api.version>3.8.6</maven-plugin-api.version>
-        <maven-plugin-annotations.version>3.6.4</maven-plugin-annotations.version>
+        <maven-plugin-annotations.version>3.7.0</maven-plugin-annotations.version>
         <maven-surefire-plugin.version>3.0.0-M7</maven-surefire-plugin.version>
         <maven-failsafe-plugin.version>3.0.0-M7</maven-failsafe-plugin.version>
         <maven-enforcer-plugin.version>3.1.0</maven-enforcer-plugin.version>
