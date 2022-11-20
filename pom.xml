@@ -26,7 +26,7 @@
     <version>1.5.0</version>
     <packaging>maven-plugin</packaging>
     <name>AdeptJ :: Maven Plugin</name>
-    <description>AdeptJ Maven Plugin for Supporting Bundle Development</description>
+    <description>Maven Plugin for Supporting OSGi Bundle Development(make bundle install/uninstall easy)</description>
     <url>https://www.adeptj.com</url>
     <inceptionYear>2016</inceptionYear>
 
@@ -237,12 +237,6 @@
         </dependency>
 
         <dependency>
-            <groupId>commons-codec</groupId>
-            <artifactId>commons-codec</artifactId>
-            <version>${commons-codec.version}</version>
-        </dependency>
-
-        <dependency>
             <groupId>org.apache.httpcomponents.core5</groupId>
             <artifactId>httpcore5</artifactId>
             <version>${httpcore5.version}</version>
@@ -259,10 +253,6 @@
             <artifactId>httpclient5</artifactId>
             <version>${httpclient5.version}</version>
             <exclusions>
-                <exclusion>
-                    <groupId>commons-codec</groupId>
-                    <artifactId>commons-codec</artifactId>
-                </exclusion>
                 <exclusion>
                     <groupId>org.slf4j</groupId>
                     <artifactId>slf4j-api</artifactId>
