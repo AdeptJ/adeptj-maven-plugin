@@ -42,8 +42,8 @@
         <maven-plugin-plugin.version>3.8.1</maven-plugin-plugin.version>
         <maven-plugin-api.version>3.9.0</maven-plugin-api.version>
         <maven-plugin-annotations.version>3.8.1</maven-plugin-annotations.version>
-        <maven-surefire-plugin.version>3.0.0-M9</maven-surefire-plugin.version>
-        <maven-failsafe-plugin.version>3.0.0-M9</maven-failsafe-plugin.version>
+        <maven-surefire-plugin.version>3.0.0</maven-surefire-plugin.version>
+        <maven-failsafe-plugin.version>3.0.0</maven-failsafe-plugin.version>
         <maven-enforcer-plugin.version>3.2.1</maven-enforcer-plugin.version>
         <maven-jar-plugin.version>3.3.0</maven-jar-plugin.version>
         <maven-gpg-plugin.version>3.0.1</maven-gpg-plugin.version>
