@@ -35,7 +35,7 @@ import static com.adeptj.maven.plugin.bundle.Constants.BUNDLE_VERSION;
  *
  * @author Rakesh.Kumar, AdeptJ
  */
-class BundleInfo {
+public class BundleInfo {
 
     private final String bundleName;
 

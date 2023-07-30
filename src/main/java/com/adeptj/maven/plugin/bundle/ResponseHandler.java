@@ -7,6 +7,6 @@ public class ResponseHandler implements HttpClientResponseHandler<ClientResponse
 
     @Override
     public ClientResponse handleResponse(ClassicHttpResponse response) {
-        return new ClientResponse(response.getCode(), response.getReasonPhrase());
+        return new ClientResponse(response);
     }
 }

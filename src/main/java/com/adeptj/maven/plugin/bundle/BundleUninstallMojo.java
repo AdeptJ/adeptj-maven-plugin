@@ -38,7 +38,6 @@ import static com.adeptj.maven.plugin.bundle.Constants.PARAM_ACTION;
 import static com.adeptj.maven.plugin.bundle.Constants.PARAM_ACTION_UNINSTALL_VALUE;
 import static com.adeptj.maven.plugin.bundle.Constants.URL_BUNDLE_UNINSTALL;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.apache.hc.core5.http.HttpStatus.SC_OK;
 
 /**
  * Mojo for uninstall an OSGi bundle from a running AdeptJ Runtime instance.
@@ -59,7 +58,7 @@ public class BundleUninstallMojo extends AbstractBundleMojo {
         form.add(new BasicNameValuePair(PARAM_ACTION, PARAM_ACTION_UNINSTALL_VALUE));
         request.setEntity(HttpEntities.createUrlEncoded(form, UTF_8));
         ClientResponse response = this.httpClient.execute(request, this.responseHandler);
-        if (response.getCode() == SC_OK) {
+        if (response.isOk()) {
             this.getLog().info("Bundle uninstalled successfully, please check AdeptJ OSGi Web Console"
                     + " [" + this.consoleUrl + "/bundles" + "]");
         } else {

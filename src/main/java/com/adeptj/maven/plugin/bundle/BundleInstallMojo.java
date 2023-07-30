@@ -31,7 +31,6 @@ import java.net.URI;
 
 import static com.adeptj.maven.plugin.bundle.BundleInstallMojo.MOJO_NAME;
 import static com.adeptj.maven.plugin.bundle.Constants.URL_BUNDLE_INSTALL;
-import static org.apache.hc.core5.http.HttpStatus.SC_OK;
 import static org.apache.maven.plugins.annotations.LifecyclePhase.INSTALL;
 
 /**
@@ -54,18 +53,18 @@ public class BundleInstallMojo extends AbstractBundleMojo {
                 this.parallelVersion);
         request.setEntity(entity);
         ClientResponse response = this.httpClient.execute(request, this.responseHandler);
-            if (response.getCode() == SC_OK) {
-                this.getLog().info("Bundle installed successfully, please check AdeptJ OSGi Web Console"
-                        + " [" + this.consoleUrl + "/bundles" + "]");
-                return;
-            }
-            if (this.failOnError) {
-                throw new MojoExecutionException(
-                        String.format("Couldn't install bundle, reason: [%s], status: [%s]",
-                                response.getReasonPhrase(),
-                                response.getCode()));
-            }
-            this.getLog().error("Problem installing bundle, please check AdeptJ OSGi Web Console!!");
+        if (response.isOk()) {
+            this.getLog().info("Bundle installed successfully, please check AdeptJ OSGi Web Console"
+                    + " [" + this.consoleUrl + "/bundles" + "]");
+            return;
+        }
+        if (this.failOnError) {
+            throw new MojoExecutionException(
+                    String.format("Couldn't install bundle, reason: [%s], status: [%s]",
+                            response.getReasonPhrase(),
+                            response.getCode()));
+        }
+        this.getLog().error("Problem installing bundle, please check AdeptJ OSGi Web Console!!");
     }
 
     @Override

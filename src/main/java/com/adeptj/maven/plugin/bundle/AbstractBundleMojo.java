@@ -52,7 +52,6 @@ import static com.adeptj.maven.plugin.bundle.Constants.RT_ADAPTER_TOMCAT;
 import static com.adeptj.maven.plugin.bundle.Constants.VALUE_FALSE;
 import static com.adeptj.maven.plugin.bundle.Constants.VALUE_TRUE;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.apache.hc.core5.http.HttpStatus.SC_OK;
 
 /**
  * Base for various bundle mojo implementations.
@@ -98,8 +97,8 @@ abstract class AbstractBundleMojo extends AbstractMojo {
     @Parameter(property = "adeptj.password", defaultValue = "admin", required = true)
     private String password;
 
-    @Parameter(property = "adeptj.runtime.adapter")
-    private String adapter;
+    @Parameter(property = "adeptj.rt.server.adapter")
+    private String serverAdapter;
 
     private final CookieStore cookieStore;
 
@@ -144,10 +143,10 @@ abstract class AbstractBundleMojo extends AbstractMojo {
     }
 
     private void initServerHttpSession() throws IOException {
-        if (StringUtils.equalsIgnoreCase(this.adapter, RT_ADAPTER_TOMCAT)) {
+        if (StringUtils.equalsIgnoreCase(this.serverAdapter, RT_ADAPTER_TOMCAT)) {
             HttpGet consoleReq = new HttpGet(URI.create(this.consoleUrl));
             ClientResponse response = this.httpClient.execute(consoleReq, this.responseHandler);
-            if (response.getCode() == SC_OK) {
+            if (response.isOk()) {
                 this.getLog().debug("Invoked /system/console so that server HttpSession is initialized!");
             }
         }
@@ -160,7 +159,7 @@ abstract class AbstractBundleMojo extends AbstractMojo {
         form.add(new BasicNameValuePair(J_PASSWORD, this.password));
         request.setEntity(HttpEntities.createUrlEncoded(form, UTF_8));
         ClientResponse response = this.httpClient.execute(request, this.responseHandler);
-        this.getLog().debug("Login status code: " + response.getCode());
+        this.getLog().info("Login status code: " + response.getCode());
         this.loginSucceeded = this.cookieStore.getCookies()
                 .stream()
                 .anyMatch(cookie -> StringUtils.startsWith(cookie.getName(), COOKIE_JSESSIONID));
@@ -169,11 +168,11 @@ abstract class AbstractBundleMojo extends AbstractMojo {
 
     void logout() {
         if (this.loginSucceeded) {
-            this.getLog().debug("Invoking Logout!!");
+            this.getLog().info("Invoking Logout!!");
             try {
                 ClientResponse response = this.httpClient.execute(new HttpGet(this.logoutUrl), this.responseHandler);
-                this.getLog().debug("Logout status code: " + response.getCode());
-                this.getLog().debug("Logout successful!!");
+                this.getLog().info("Logout status code: " + response.getCode());
+                this.getLog().info("Logout successful!!");
                 this.cookieStore.clear();
             } catch (IOException ex) {
                 this.getLog().error(ex);
