@@ -46,7 +46,7 @@ public class BundleInstallMojo extends AbstractBundleMojo {
     @Override
     public void doExecute(File bundle, BundleInfo info) throws IOException, MojoExecutionException {
         this.getLog().info("Installing " + info);
-        URI uri = URI.create(String.format(URL_BUNDLE_INSTALL, this.consoleUrl));
+        URI uri = this.getUri(String.format(URL_BUNDLE_INSTALL, this.consoleUrl));
         HttpPost request = new HttpPost(uri);
         HttpEntity entity = BundleMojoUtil.newBundleInstallMultipartEntity(bundle, this.startLevel, this.startBundle,
                 this.refreshPackages,

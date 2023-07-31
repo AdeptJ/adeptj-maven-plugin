@@ -44,6 +44,7 @@ import java.util.jar.JarFile;
 
 import static com.adeptj.maven.plugin.bundle.Constants.COOKIE_JSESSIONID;
 import static com.adeptj.maven.plugin.bundle.Constants.DEFAULT_AUTH_URL;
+import static com.adeptj.maven.plugin.bundle.Constants.DEFAULT_BASE_URL;
 import static com.adeptj.maven.plugin.bundle.Constants.DEFAULT_CONSOLE_URL;
 import static com.adeptj.maven.plugin.bundle.Constants.DEFAULT_LOGOUT_URL;
 import static com.adeptj.maven.plugin.bundle.Constants.J_PASSWORD;
@@ -82,6 +83,9 @@ abstract class AbstractBundleMojo extends AbstractMojo {
     @Parameter(property = "adeptj.bundle.parallelVersion", defaultValue = VALUE_FALSE)
     boolean parallelVersion;
 
+    @Parameter(property = "adeptj.base.url", defaultValue = DEFAULT_BASE_URL, required = true)
+    String baseUrl;
+
     @Parameter(property = "adeptj.console.url", defaultValue = DEFAULT_CONSOLE_URL, required = true)
     String consoleUrl;
 
@@ -97,7 +101,7 @@ abstract class AbstractBundleMojo extends AbstractMojo {
     @Parameter(property = "adeptj.password", defaultValue = "admin", required = true)
     private String password;
 
-    @Parameter(property = "adeptj.rt.server.adapter")
+    @Parameter(property = "adeptj.server.adapter")
     private String serverAdapter;
 
     private final CookieStore cookieStore;
@@ -142,10 +146,19 @@ abstract class AbstractBundleMojo extends AbstractMojo {
         }
     }
 
+    URI getUri(String url) {
+        if (!StringUtils.startsWith(url, "/")) {
+            url = "/" + url;
+        }
+        URI uri = URI.create(this.baseUrl + url);
+        this.getLog().debug("URI to hit: " + uri);
+        return uri;
+    }
+
     private void initServerHttpSession() throws IOException {
         if (StringUtils.equalsIgnoreCase(this.serverAdapter, RT_ADAPTER_TOMCAT)) {
-            HttpGet consoleReq = new HttpGet(URI.create(this.consoleUrl));
-            ClientResponse response = this.httpClient.execute(consoleReq, this.responseHandler);
+            HttpGet request = new HttpGet(this.getUri(this.consoleUrl));
+            ClientResponse response = this.httpClient.execute(request, this.responseHandler);
             if (response.isOk()) {
                 this.getLog().debug("Invoked /system/console so that server HttpSession is initialized!");
             }
@@ -153,13 +166,13 @@ abstract class AbstractBundleMojo extends AbstractMojo {
     }
 
     boolean login() throws IOException {
-        HttpPost request = new HttpPost(this.authUrl);
+        HttpPost request = new HttpPost(this.getUri(this.authUrl));
         List<NameValuePair> form = new ArrayList<>();
         form.add(new BasicNameValuePair(J_USERNAME, this.user));
         form.add(new BasicNameValuePair(J_PASSWORD, this.password));
         request.setEntity(HttpEntities.createUrlEncoded(form, UTF_8));
         ClientResponse response = this.httpClient.execute(request, this.responseHandler);
-        this.getLog().info("Login status code: " + response.getCode());
+        this.getLog().debug("Login status code: " + response.getCode());
         this.loginSucceeded = this.cookieStore.getCookies()
                 .stream()
                 .anyMatch(cookie -> StringUtils.startsWith(cookie.getName(), COOKIE_JSESSIONID));
@@ -168,11 +181,12 @@ abstract class AbstractBundleMojo extends AbstractMojo {
 
     void logout() {
         if (this.loginSucceeded) {
-            this.getLog().info("Invoking Logout!!");
+            this.getLog().debug("Invoking Logout!!");
             try {
-                ClientResponse response = this.httpClient.execute(new HttpGet(this.logoutUrl), this.responseHandler);
-                this.getLog().info("Logout status code: " + response.getCode());
-                this.getLog().info("Logout successful!!");
+                HttpGet request = new HttpGet(this.getUri(this.logoutUrl));
+                ClientResponse response = this.httpClient.execute(request, this.responseHandler);
+                this.getLog().debug("Logout status code: " + response.getCode());
+                this.getLog().debug("Logout successful!!");
                 this.cookieStore.clear();
             } catch (IOException ex) {
                 this.getLog().error(ex);
