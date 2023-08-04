@@ -43,7 +43,7 @@ import java.util.List;
 import java.util.jar.JarFile;
 
 import static com.adeptj.maven.plugin.bundle.Constants.COOKIE_JSESSIONID;
-import static com.adeptj.maven.plugin.bundle.Constants.DEFAULT_AUTH_URL;
+import static com.adeptj.maven.plugin.bundle.Constants.DEFAULT_LOGIN_URL;
 import static com.adeptj.maven.plugin.bundle.Constants.DEFAULT_BASE_URL;
 import static com.adeptj.maven.plugin.bundle.Constants.DEFAULT_CONSOLE_URL;
 import static com.adeptj.maven.plugin.bundle.Constants.DEFAULT_LOGOUT_URL;
@@ -89,8 +89,8 @@ abstract class AbstractBundleMojo extends AbstractMojo {
     @Parameter(property = "adeptj.console.url", defaultValue = DEFAULT_CONSOLE_URL, required = true)
     String consoleUrl;
 
-    @Parameter(property = "adeptj.auth.url", defaultValue = DEFAULT_AUTH_URL, required = true)
-    private String authUrl;
+    @Parameter(property = "adeptj.login.url", defaultValue = DEFAULT_LOGIN_URL, required = true)
+    private String loginUrl;
 
     @Parameter(property = "adeptj.logout.url", defaultValue = DEFAULT_LOGOUT_URL)
     private String logoutUrl;
@@ -146,7 +146,7 @@ abstract class AbstractBundleMojo extends AbstractMojo {
         }
     }
 
-    URI getUri(String url) {
+    URI getFullUri(String url) {
         if (!StringUtils.startsWith(url, "/")) {
             url = "/" + url;
         }
@@ -157,7 +157,7 @@ abstract class AbstractBundleMojo extends AbstractMojo {
 
     private void initServerHttpSession() throws IOException {
         if (StringUtils.equalsIgnoreCase(this.serverAdapter, RT_ADAPTER_TOMCAT)) {
-            HttpGet request = new HttpGet(this.getUri(this.consoleUrl));
+            HttpGet request = new HttpGet(this.getFullUri(this.consoleUrl));
             ClientResponse response = this.httpClient.execute(request, this.responseHandler);
             if (response.isOk()) {
                 this.getLog().debug("Invoked /system/console so that server HttpSession is initialized!");
@@ -166,7 +166,7 @@ abstract class AbstractBundleMojo extends AbstractMojo {
     }
 
     boolean login() throws IOException {
-        HttpPost request = new HttpPost(this.getUri(this.authUrl));
+        HttpPost request = new HttpPost(this.getFullUri(this.loginUrl));
         List<NameValuePair> form = new ArrayList<>();
         form.add(new BasicNameValuePair(J_USERNAME, this.user));
         form.add(new BasicNameValuePair(J_PASSWORD, this.password));
@@ -183,7 +183,7 @@ abstract class AbstractBundleMojo extends AbstractMojo {
         if (this.loginSucceeded) {
             this.getLog().debug("Invoking Logout!!");
             try {
-                HttpGet request = new HttpGet(this.getUri(this.logoutUrl));
+                HttpGet request = new HttpGet(this.getFullUri(this.logoutUrl));
                 ClientResponse response = this.httpClient.execute(request, this.responseHandler);
                 this.getLog().debug("Logout status code: " + response.getCode());
                 this.getLog().debug("Logout successful!!");

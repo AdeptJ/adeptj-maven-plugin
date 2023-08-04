@@ -52,7 +52,7 @@ public class BundleUninstallMojo extends AbstractBundleMojo {
     @Override
     public void doExecute(File bundle, BundleInfo info) throws IOException, MojoExecutionException {
         this.getLog().info("Uninstalling " + info);
-        URI uri = this.getUri(String.format(URL_BUNDLE_UNINSTALL, this.consoleUrl, info.getSymbolicName()));
+        URI uri = this.getFullUri(String.format(URL_BUNDLE_UNINSTALL, this.consoleUrl, info.getSymbolicName()));
         HttpPost request = new HttpPost(uri);
         List<NameValuePair> form = new ArrayList<>();
         form.add(new BasicNameValuePair(PARAM_ACTION, PARAM_ACTION_UNINSTALL_VALUE));

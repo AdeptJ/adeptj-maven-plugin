@@ -38,7 +38,7 @@ public final class Constants {
 
     static final String DEFAULT_BASE_URL = "http://localhost:8080";
 
-    static final String DEFAULT_AUTH_URL = "/admin/auth/j_security_check";
+    static final String DEFAULT_LOGIN_URL = "/admin/login/j_security_check";
 
     static final String DEFAULT_LOGOUT_URL = "/admin/logout";
 
