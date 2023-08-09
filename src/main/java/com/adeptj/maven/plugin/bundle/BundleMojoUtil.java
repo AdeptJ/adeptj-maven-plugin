@@ -20,12 +20,12 @@
 
 package com.adeptj.maven.plugin.bundle;
 
-import org.eclipse.jetty.client.util.MultiPartRequestContent;
-import org.eclipse.jetty.client.util.PathRequestContent;
-import org.eclipse.jetty.client.util.StringRequestContent;
+import org.eclipse.jetty.client.MultiPartRequestContent;
+import org.eclipse.jetty.client.StringRequestContent;
+import org.eclipse.jetty.http.HttpFields;
+import org.eclipse.jetty.http.MultiPart;
 
 import java.io.File;
-import java.io.IOException;
 
 import static com.adeptj.maven.plugin.bundle.Constants.PARAM_ACTION;
 import static com.adeptj.maven.plugin.bundle.Constants.PARAM_ACTION_INSTALL_VALUE;
@@ -46,22 +46,28 @@ final class BundleMojoUtil {
     private BundleMojoUtil() {
     }
 
-    static MultiPartRequestContent newBundleInstallMultiPartRequestContent(File bundle, String startLevel, boolean startBundle,
+    static MultiPartRequestContent newBundleInstallMultiPartRequestContent(File bundle, String startLevel,
+                                                                           boolean startBundle,
                                                                            boolean refreshPackages,
-                                                                           boolean parallelVersion) throws IOException {
+                                                                           boolean parallelVersion) {
         MultiPartRequestContent content = new MultiPartRequestContent();
-        content.addFieldPart(PARAM_ACTION, new StringRequestContent(PARAM_ACTION_INSTALL_VALUE), null);
-        content.addFieldPart(PARAM_START_LEVEL, new StringRequestContent(startLevel), null);
-        content.addFilePart(PARAM_BUNDLE_FILE, bundle.getName(), new PathRequestContent(bundle.toPath()), null);
+        content.addPart(new MultiPart.ContentSourcePart(PARAM_ACTION, null, HttpFields.EMPTY,
+                new StringRequestContent(PARAM_ACTION_INSTALL_VALUE)));
+        content.addPart(new MultiPart.ContentSourcePart(PARAM_START_LEVEL, null, HttpFields.EMPTY,
+                new StringRequestContent(startLevel)));
+        content.addPart(new MultiPart.PathPart(PARAM_BUNDLE_FILE, bundle.getName(), HttpFields.EMPTY, bundle.toPath()));
         if (startBundle) {
-            content.addFieldPart(PARAM_START, new StringRequestContent(VALUE_TRUE), null);
+            content.addPart(new MultiPart.ContentSourcePart(PARAM_START, null, HttpFields.EMPTY,
+                    new StringRequestContent(VALUE_TRUE)));
         }
         if (refreshPackages) {
-            content.addFieldPart(PARAM_REFRESH_PACKAGES, new StringRequestContent(VALUE_TRUE), null);
+            content.addPart(new MultiPart.ContentSourcePart(PARAM_REFRESH_PACKAGES, null, HttpFields.EMPTY,
+                    new StringRequestContent(VALUE_TRUE)));
         }
         // Since web console v4.4.0
         if (parallelVersion) {
-            content.addFieldPart(PARAM_PARALLEL_VERSION, new StringRequestContent(VALUE_TRUE), null);
+            content.addPart(new MultiPart.ContentSourcePart(PARAM_PARALLEL_VERSION, null, HttpFields.EMPTY,
+                    new StringRequestContent(VALUE_TRUE)));
         }
         // MultiPartRequestContent must be closed before sending request.
         content.close();

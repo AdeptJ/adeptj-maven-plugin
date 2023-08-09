@@ -24,30 +24,33 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Parameter;
+import org.eclipse.jetty.client.ContentResponse;
+import org.eclipse.jetty.client.FormRequestContent;
 import org.eclipse.jetty.client.HttpClient;
-import org.eclipse.jetty.client.api.ContentResponse;
-import org.eclipse.jetty.client.api.Request;
-import org.eclipse.jetty.client.util.FormRequestContent;
-import org.eclipse.jetty.http.HttpMethod;
+import org.eclipse.jetty.client.Request;
+import org.eclipse.jetty.http.HttpCookieStore;
 import org.eclipse.jetty.http.HttpStatus;
 import org.eclipse.jetty.util.Fields;
-import org.eclipse.jetty.util.HttpCookieStore;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 import java.util.jar.JarFile;
 
 import static com.adeptj.maven.plugin.bundle.Constants.COOKIE_JSESSIONID;
-import static com.adeptj.maven.plugin.bundle.Constants.DEFAULT_AUTH_URL;
+import static com.adeptj.maven.plugin.bundle.Constants.DEFAULT_BASE_URL;
 import static com.adeptj.maven.plugin.bundle.Constants.DEFAULT_CONSOLE_URL;
+import static com.adeptj.maven.plugin.bundle.Constants.DEFAULT_LOGIN_URL;
 import static com.adeptj.maven.plugin.bundle.Constants.DEFAULT_LOGOUT_URL;
 import static com.adeptj.maven.plugin.bundle.Constants.J_PASSWORD;
 import static com.adeptj.maven.plugin.bundle.Constants.J_USERNAME;
 import static com.adeptj.maven.plugin.bundle.Constants.RT_ADAPTER_TOMCAT;
 import static com.adeptj.maven.plugin.bundle.Constants.VALUE_FALSE;
 import static com.adeptj.maven.plugin.bundle.Constants.VALUE_TRUE;
+import static org.eclipse.jetty.http.HttpMethod.GET;
+import static org.eclipse.jetty.http.HttpMethod.POST;
 
 /**
  * Base for various bundle mojo implementations.
@@ -78,11 +81,14 @@ abstract class AbstractBundleMojo extends AbstractMojo {
     @Parameter(property = "adeptj.bundle.parallelVersion", defaultValue = VALUE_FALSE)
     boolean parallelVersion;
 
+    @Parameter(property = "adeptj.base.url", defaultValue = DEFAULT_BASE_URL, required = true)
+    String baseUrl;
+
     @Parameter(property = "adeptj.console.url", defaultValue = DEFAULT_CONSOLE_URL, required = true)
     String consoleUrl;
 
-    @Parameter(property = "adeptj.auth.url", defaultValue = DEFAULT_AUTH_URL, required = true)
-    private String authUrl;
+    @Parameter(property = "adeptj.login.url", defaultValue = DEFAULT_LOGIN_URL, required = true)
+    private String loginUrl;
 
     @Parameter(property = "adeptj.logout.url", defaultValue = DEFAULT_LOGOUT_URL)
     private String logoutUrl;
@@ -93,8 +99,8 @@ abstract class AbstractBundleMojo extends AbstractMojo {
     @Parameter(property = "adeptj.password", defaultValue = "admin", required = true)
     private String password;
 
-    @Parameter(property = "adeptj.runtime.adapter")
-    private String adapter;
+    @Parameter(property = "adeptj.server.adapter")
+    private String serverAdapter;
 
     private boolean loginSucceeded;
 
@@ -103,7 +109,7 @@ abstract class AbstractBundleMojo extends AbstractMojo {
     public AbstractBundleMojo() {
         this.httpClient = new HttpClient();
         this.httpClient.setFollowRedirects(false);
-        this.httpClient.setCookieStore(new HttpCookieStore());
+        this.httpClient.setHttpCookieStore(new HttpCookieStore.Default());
         try {
             this.httpClient.start();
             this.getLog().info("Using Jetty HttpClient!!");
@@ -137,10 +143,19 @@ abstract class AbstractBundleMojo extends AbstractMojo {
         }
     }
 
+    URI getFullUri(String url) {
+        if (!StringUtils.startsWith(url, "/")) {
+            url = "/" + url;
+        }
+        URI uri = URI.create(this.baseUrl + url);
+        this.getLog().debug("URI to hit: " + uri);
+        return uri;
+    }
+
     private void initServerHttpSession() throws ExecutionException, InterruptedException, TimeoutException {
-        if (StringUtils.equalsIgnoreCase(this.adapter, RT_ADAPTER_TOMCAT)) {
-            ContentResponse response = this.httpClient.newRequest(this.consoleUrl)
-                    .method(HttpMethod.GET)
+        if (StringUtils.equalsIgnoreCase(this.serverAdapter, RT_ADAPTER_TOMCAT)) {
+            ContentResponse response = this.httpClient.newRequest(this.getFullUri(this.consoleUrl))
+                    .method(GET)
                     .send();
             if (HttpStatus.isSuccess(response.getStatus())) {
                 this.getLog().debug("Invoked /system/console so that server HttpSession is initialized!");
@@ -149,7 +164,7 @@ abstract class AbstractBundleMojo extends AbstractMojo {
     }
 
     boolean login() throws ExecutionException, InterruptedException, TimeoutException {
-        Request request = this.httpClient.newRequest(this.authUrl).method(HttpMethod.POST);
+        Request request = this.httpClient.newRequest(this.getFullUri(this.loginUrl)).method(POST);
         Fields fields = new Fields();
         fields.put(J_USERNAME, this.user);
         fields.put(J_PASSWORD, this.password);
@@ -157,8 +172,8 @@ abstract class AbstractBundleMojo extends AbstractMojo {
         ContentResponse response = request.send();
         int status = response.getStatus();
         if (HttpStatus.isSuccess(status) || HttpStatus.isRedirection(status)) {
-            this.loginSucceeded = this.httpClient.getCookieStore()
-                    .getCookies()
+            this.loginSucceeded = this.httpClient.getHttpCookieStore()
+                    .all()
                     .stream()
                     .anyMatch(cookie -> StringUtils.startsWith(cookie.getName(), COOKIE_JSESSIONID));
             if (this.loginSucceeded) {
@@ -172,11 +187,11 @@ abstract class AbstractBundleMojo extends AbstractMojo {
         if (this.loginSucceeded) {
             this.getLog().info("Invoking Logout!!");
             try {
-                Request request = this.httpClient.newRequest(this.logoutUrl).method(HttpMethod.GET);
+                Request request = this.httpClient.newRequest(this.getFullUri(this.logoutUrl)).method(GET);
                 ContentResponse response = request.send();
                 this.getLog().info("Logout status code: " + response.getStatus());
                 this.getLog().info("Logout successful!!");
-                this.httpClient.getCookieStore().removeAll();
+                this.httpClient.getHttpCookieStore().clear();
             } catch (Exception ex) {
                 this.getLog().error(ex);
             }
@@ -185,7 +200,7 @@ abstract class AbstractBundleMojo extends AbstractMojo {
 
     void closeHttpClient() {
         try {
-            this.httpClient.getCookieStore().removeAll();
+            this.httpClient.getHttpCookieStore().clear();
             this.httpClient.stop();
             this.getLog().debug("HttpClient closed!!");
         } catch (Exception ex) {

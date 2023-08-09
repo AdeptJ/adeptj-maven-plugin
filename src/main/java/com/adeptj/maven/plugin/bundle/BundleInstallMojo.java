@@ -22,10 +22,9 @@ package com.adeptj.maven.plugin.bundle;
 
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
-import org.eclipse.jetty.client.api.ContentResponse;
-import org.eclipse.jetty.client.api.Request;
-import org.eclipse.jetty.client.util.MultiPartRequestContent;
-import org.eclipse.jetty.http.HttpMethod;
+import org.eclipse.jetty.client.ContentResponse;
+import org.eclipse.jetty.client.MultiPartRequestContent;
+import org.eclipse.jetty.client.Request;
 import org.eclipse.jetty.http.HttpStatus;
 
 import java.io.File;
@@ -37,6 +36,7 @@ import java.util.concurrent.TimeoutException;
 import static com.adeptj.maven.plugin.bundle.BundleInstallMojo.MOJO_NAME;
 import static com.adeptj.maven.plugin.bundle.Constants.URL_BUNDLE_INSTALL;
 import static org.apache.maven.plugins.annotations.LifecyclePhase.INSTALL;
+import static org.eclipse.jetty.http.HttpMethod.POST;
 
 /**
  * Mojo for installing the OSGi Bundle to running AdeptJ Runtime instance.
@@ -51,8 +51,8 @@ public class BundleInstallMojo extends AbstractBundleMojo {
     @Override
     public void doExecute(File bundle, BundleInfo info) throws IOException, MojoExecutionException {
         this.getLog().info("Installing " + info);
-        URI uri = URI.create(String.format(URL_BUNDLE_INSTALL, this.consoleUrl));
-        Request request = this.httpClient.newRequest(uri).method(HttpMethod.POST);
+        URI uri = this.getFullUri(String.format(URL_BUNDLE_INSTALL, this.consoleUrl));
+        Request request = this.httpClient.newRequest(uri).method(POST);
         MultiPartRequestContent content = BundleMojoUtil.newBundleInstallMultiPartRequestContent(bundle, this.startLevel,
                 this.startBundle,
                 this.refreshPackages,
