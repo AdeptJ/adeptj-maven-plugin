@@ -34,7 +34,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <jdk.release.version>11</jdk.release.version>
         <commons-lang.version>3.13.0</commons-lang.version>
-        <jetty-client.version>12.0.0</jetty-client.version>
+        <jetty-client.version>12.0.1</jetty-client.version>
         <slf4j.version>2.0.7</slf4j.version>
         <maven-compiler-plugin.version>3.11.0</maven-compiler-plugin.version>
         <maven-plugin-plugin.version>3.9.0</maven-plugin-plugin.version>
@@ -42,7 +42,7 @@
         <maven-plugin-annotations.version>3.9.0</maven-plugin-annotations.version>
         <maven-surefire-plugin.version>3.1.2</maven-surefire-plugin.version>
         <maven-failsafe-plugin.version>3.1.2</maven-failsafe-plugin.version>
-        <maven-enforcer-plugin.version>3.3.0</maven-enforcer-plugin.version>
+        <maven-enforcer-plugin.version>3.4.0</maven-enforcer-plugin.version>
         <maven-jar-plugin.version>3.3.0</maven-jar-plugin.version>
         <maven-gpg-plugin.version>3.1.0</maven-gpg-plugin.version>
         <maven-source-plugin.version>3.3.0</maven-source-plugin.version>
