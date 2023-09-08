@@ -37,7 +37,7 @@
         <httpcore5.version>5.2.2</httpcore5.version>
         <httpcore5-h2.version>5.2.2</httpcore5-h2.version>
         <httpclient5.version>5.2.1</httpclient5.version>
-        <slf4j.version>2.0.7</slf4j.version>
+        <slf4j.version>2.0.9</slf4j.version>
         <maven-compiler-plugin.version>3.11.0</maven-compiler-plugin.version>
         <maven-plugin-plugin.version>3.9.0</maven-plugin-plugin.version>
         <maven-plugin-api.version>3.9.4</maven-plugin-api.version>
