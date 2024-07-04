@@ -40,7 +40,7 @@
         <slf4j.version>2.0.13</slf4j.version>
         <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
         <maven-plugin-plugin.version>3.13.0</maven-plugin-plugin.version>
-        <maven-plugin-api.version>3.9.7</maven-plugin-api.version>
+        <maven-plugin-api.version>3.9.8</maven-plugin-api.version>
         <maven-plugin-annotations.version>3.13.1</maven-plugin-annotations.version>
         <maven-surefire-plugin.version>3.2.5</maven-surefire-plugin.version>
         <maven-failsafe-plugin.version>3.2.5</maven-failsafe-plugin.version>
