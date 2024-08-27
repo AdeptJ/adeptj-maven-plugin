@@ -23,7 +23,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.adeptj</groupId>
     <artifactId>adeptj-maven-plugin</artifactId>
-    <version>1.6.1</version>
+    <version>1.6.2</version>
     <packaging>maven-plugin</packaging>
     <name>AdeptJ :: Maven Plugin</name>
     <description>Maven Plugin for Supporting OSGi Bundle Development(make bundle install/uninstall easy)</description>
