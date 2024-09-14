@@ -1,7 +1,7 @@
 /*
 ###############################################################################
 #                                                                             #
-#    Copyright 2016, AdeptJ (http://www.adeptj.com)                           #
+#    Copyright 2016-2024, AdeptJ (http://www.adeptj.com)                      #
 #                                                                             #
 #    Licensed under the Apache License, Version 2.0 (the "License");          #
 #    you may not use this file except in compliance with the License.         #
@@ -17,7 +17,6 @@
 #                                                                             #
 ###############################################################################
 */
-
 package com.adeptj.maven.plugin.bundle;
 
 import org.apache.commons.lang3.StringUtils;
@@ -40,12 +39,11 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.jar.JarFile;
 
 import static com.adeptj.maven.plugin.bundle.Constants.COOKIE_JSESSIONID;
-import static com.adeptj.maven.plugin.bundle.Constants.DEFAULT_LOGIN_URL;
 import static com.adeptj.maven.plugin.bundle.Constants.DEFAULT_BASE_URL;
 import static com.adeptj.maven.plugin.bundle.Constants.DEFAULT_CONSOLE_URL;
+import static com.adeptj.maven.plugin.bundle.Constants.DEFAULT_LOGIN_URL;
 import static com.adeptj.maven.plugin.bundle.Constants.DEFAULT_LOGOUT_URL;
 import static com.adeptj.maven.plugin.bundle.Constants.J_PASSWORD;
 import static com.adeptj.maven.plugin.bundle.Constants.J_USERNAME;
@@ -57,7 +55,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 /**
  * Base for various bundle mojo implementations.
  *
- * @author Rakesh.Kumar, AdeptJ
+ * @author Rakesh Kumar, AdeptJ
  */
 abstract class AbstractBundleMojo extends AbstractMojo {
 
@@ -112,7 +110,7 @@ abstract class AbstractBundleMojo extends AbstractMojo {
 
     private boolean loginSucceeded;
 
-    public AbstractBundleMojo() {
+    AbstractBundleMojo() {
         this.cookieStore = new BasicCookieStore();
         this.httpClient = HttpClients.custom()
                 .disableRedirectHandling()
@@ -121,20 +119,19 @@ abstract class AbstractBundleMojo extends AbstractMojo {
         this.responseHandler = new ResponseHandler();
     }
 
-    public abstract void doExecute(File bundle, BundleInfo info) throws IOException, MojoExecutionException;
+    abstract void doExecute(BundleInfo info) throws IOException, MojoExecutionException;
 
-    public abstract void handleException(Exception ex) throws MojoExecutionException;
+    abstract void handleException(Exception ex) throws MojoExecutionException;
 
     @Override
     public void execute() throws MojoExecutionException {
-        File bundle = new File(this.bundleFileName);
         try {
-            BundleInfo info = this.getBundleInfo(bundle);
+            BundleInfo info = new BundleInfo(new File(this.bundleFileName));
             // First login, then while installing bundle, HttpClient will pass the JSESSIONID received
             // in the Set-Cookie header in the auth call. if authentication fails, discontinue the further execution.
             this.initServerHttpSession();
             if (this.login()) {
-                this.doExecute(bundle, info);
+                this.doExecute(info);
             } else {
                 this.handleLoginFailure();
             }
@@ -201,12 +198,6 @@ abstract class AbstractBundleMojo extends AbstractMojo {
             this.getLog().debug("HttpClient closed!!");
         } catch (IOException ex) {
             this.getLog().error(ex);
-        }
-    }
-
-    BundleInfo getBundleInfo(File bundle) throws IOException {
-        try (JarFile bundleArchive = new JarFile(bundle)) {
-            return new BundleInfo(bundleArchive.getManifest());
         }
     }
 

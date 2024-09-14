@@ -1,7 +1,7 @@
 /*
 ###############################################################################
 #                                                                             #
-#    Copyright 2016, AdeptJ (http://www.adeptj.com)                           #
+#    Copyright 2016-2024, AdeptJ (http://www.adeptj.com)                      #
 #                                                                             #
 #    Licensed under the Apache License, Version 2.0 (the "License");          #
 #    you may not use this file except in compliance with the License.         #
@@ -17,18 +17,14 @@
 #                                                                             #
 ###############################################################################
 */
-
 package com.adeptj.maven.plugin.bundle;
 
 /**
  * Constants
  *
- * @author Rakesh.Kumar, AdeptJ
+ * @author Rakesh Kumar, AdeptJ
  */
 public final class Constants {
-
-    private Constants() {
-    }
 
     static final String J_USERNAME = "j_username";
 
@@ -75,4 +71,7 @@ public final class Constants {
     static final String BUNDLE_SYMBOLIC_NAME = "Bundle-SymbolicName";
 
     static final String RT_ADAPTER_TOMCAT = "tomcat";
+
+    private Constants() {
+    }
 }

@@ -1,7 +1,7 @@
 /*
 ###############################################################################
 #                                                                             #
-#    Copyright 2016, AdeptJ (http://www.adeptj.com)                           #
+#    Copyright 2016-2024, AdeptJ (http://www.adeptj.com)                      #
 #                                                                             #
 #    Licensed under the Apache License, Version 2.0 (the "License");          #
 #    you may not use this file except in compliance with the License.         #
@@ -17,23 +17,10 @@
 #                                                                             #
 ###############################################################################
 */
-
 package com.adeptj.maven.plugin.bundle;
 
-import org.apache.hc.client5.http.entity.mime.MultipartEntityBuilder;
-import org.apache.hc.core5.http.HttpEntity;
-
-import java.io.File;
-
-import static com.adeptj.maven.plugin.bundle.Constants.PARAM_ACTION;
-import static com.adeptj.maven.plugin.bundle.Constants.PARAM_ACTION_INSTALL_VALUE;
-import static com.adeptj.maven.plugin.bundle.Constants.PARAM_BUNDLE_FILE;
-import static com.adeptj.maven.plugin.bundle.Constants.PARAM_PARALLEL_VERSION;
-import static com.adeptj.maven.plugin.bundle.Constants.PARAM_REFRESH_PACKAGES;
-import static com.adeptj.maven.plugin.bundle.Constants.PARAM_START;
-import static com.adeptj.maven.plugin.bundle.Constants.PARAM_START_LEVEL;
-import static com.adeptj.maven.plugin.bundle.Constants.VALUE_TRUE;
-import static java.nio.charset.StandardCharsets.UTF_8;
+import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.logging.Log;
 
 /**
  * Utility methods.
@@ -42,26 +29,15 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  */
 final class BundleMojoUtil {
 
-    private BundleMojoUtil() {
+    static void doHandleException(Log log, Exception ex, String op, String consoleUrl) throws MojoExecutionException {
+        log.error(ex);
+        if (ex instanceof MojoExecutionException) {
+            throw (MojoExecutionException) ex;
+        }
+        String message = String.format("Bundle %s operation on [%s] failed, cause: %s", op, consoleUrl, ex.getMessage());
+        throw new MojoExecutionException(message, ex);
     }
 
-    static HttpEntity newBundleInstallMultipartEntity(File bundle, String startLevel, boolean startBundle,
-                                                      boolean refreshPackages, boolean parallelVersion) {
-        MultipartEntityBuilder multipartEntityBuilder = MultipartEntityBuilder.create()
-                .setCharset(UTF_8)
-                .addBinaryBody(PARAM_BUNDLE_FILE, bundle)
-                .addTextBody(PARAM_ACTION, PARAM_ACTION_INSTALL_VALUE)
-                .addTextBody(PARAM_START_LEVEL, startLevel);
-        if (startBundle) {
-            multipartEntityBuilder.addTextBody(PARAM_START, VALUE_TRUE);
-        }
-        if (refreshPackages) {
-            multipartEntityBuilder.addTextBody(PARAM_REFRESH_PACKAGES, VALUE_TRUE);
-        }
-        // Since web console v4.4.0
-        if (parallelVersion) {
-            multipartEntityBuilder.addTextBody(PARAM_PARALLEL_VERSION, VALUE_TRUE);
-        }
-        return multipartEntityBuilder.build();
+    private BundleMojoUtil() {
     }
 }

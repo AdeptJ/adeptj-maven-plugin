@@ -1,7 +1,7 @@
 /*
 ###############################################################################
 #                                                                             #
-#    Copyright 2016, AdeptJ (http://www.adeptj.com)                           #
+#    Copyright 2016-2024, AdeptJ (http://www.adeptj.com)                      #
 #                                                                             #
 #    Licensed under the Apache License, Version 2.0 (the "License");          #
 #    you may not use this file except in compliance with the License.         #
@@ -17,7 +17,6 @@
 #                                                                             #
 ###############################################################################
 */
-
 package com.adeptj.maven.plugin.bundle;
 
 import org.apache.hc.client5.http.classic.methods.HttpPost;
@@ -27,7 +26,6 @@ import org.apache.hc.core5.http.message.BasicNameValuePair;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
@@ -45,12 +43,12 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * @author Rakesh.Kumar, AdeptJ
  */
 @Mojo(name = MOJO_NAME)
-public class BundleUninstallMojo extends AbstractBundleMojo {
+class BundleUninstallMojo extends AbstractBundleMojo {
 
     static final String MOJO_NAME = "uninstall";
 
     @Override
-    public void doExecute(File bundle, BundleInfo info) throws IOException, MojoExecutionException {
+    void doExecute(BundleInfo info) throws IOException, MojoExecutionException {
         this.getLog().info("Uninstalling " + info);
         URI uri = this.getFullUri(String.format(URL_BUNDLE_UNINSTALL, this.consoleUrl, info.getSymbolicName()));
         HttpPost request = new HttpPost(uri);
@@ -73,12 +71,7 @@ public class BundleUninstallMojo extends AbstractBundleMojo {
     }
 
     @Override
-    public void handleException(Exception ex) throws MojoExecutionException {
-        this.getLog().error(ex);
-        if (ex instanceof MojoExecutionException) {
-            throw (MojoExecutionException) ex;
-        }
-        throw new MojoExecutionException("Bundle uninstall operation on [" + this.consoleUrl + "] failed, cause: "
-                + ex.getMessage(), ex);
+    void handleException(Exception ex) throws MojoExecutionException {
+        BundleMojoUtil.doHandleException(this.getLog(), ex, "uninstall", this.consoleUrl);
     }
 }

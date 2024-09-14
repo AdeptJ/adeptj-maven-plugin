@@ -1,7 +1,7 @@
 /*
 ###############################################################################
 #                                                                             #
-#    Copyright 2016, AdeptJ (http://www.adeptj.com)                           #
+#    Copyright 2016-2024, AdeptJ (http://www.adeptj.com)                      #
 #                                                                             #
 #    Licensed under the Apache License, Version 2.0 (the "License");          #
 #    you may not use this file except in compliance with the License.         #
@@ -17,13 +17,15 @@
 #                                                                             #
 ###############################################################################
 */
-
 package com.adeptj.maven.plugin.bundle;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.jar.Attributes;
+import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 
 import static com.adeptj.maven.plugin.bundle.Constants.BUNDLE_NAME;
@@ -35,7 +37,9 @@ import static com.adeptj.maven.plugin.bundle.Constants.BUNDLE_VERSION;
  *
  * @author Rakesh.Kumar, AdeptJ
  */
-public class BundleInfo {
+class BundleInfo {
+
+    private final File bundle;
 
     private final String bundleName;
 
@@ -43,16 +47,24 @@ public class BundleInfo {
 
     private final String bundleVersion;
 
-    BundleInfo(Manifest manifest) {
-        Attributes mainAttributes = manifest.getMainAttributes();
-        String bundleName = mainAttributes.getValue(BUNDLE_NAME);
-        String symbolicName = mainAttributes.getValue(BUNDLE_SYMBOLIC_NAME);
-        Validate.isTrue(StringUtils.isNotEmpty(symbolicName), "Bundle symbolic name is null!!");
-        Validate.isTrue(StringUtils.isNotEmpty(bundleName), "Artifact is not a Bundle!!");
-        String bundleVersion = mainAttributes.getValue(BUNDLE_VERSION);
-        this.bundleName = bundleName;
-        this.symbolicName = symbolicName;
-        this.bundleVersion = bundleVersion;
+    BundleInfo(File bundle) throws IOException {
+        try (JarFile bundleArchive = new JarFile(bundle)) {
+            Manifest manifest = bundleArchive.getManifest();
+            Attributes mainAttributes = manifest.getMainAttributes();
+            String bundleName = mainAttributes.getValue(BUNDLE_NAME);
+            String symbolicName = mainAttributes.getValue(BUNDLE_SYMBOLIC_NAME);
+            Validate.isTrue(StringUtils.isNotEmpty(symbolicName), "Bundle symbolic name is null!!");
+            Validate.isTrue(StringUtils.isNotEmpty(bundleName), "Artifact is not a Bundle!!");
+            String bundleVersion = mainAttributes.getValue(BUNDLE_VERSION);
+            this.bundle = bundle;
+            this.bundleName = bundleName;
+            this.symbolicName = symbolicName;
+            this.bundleVersion = bundleVersion;
+        }
+    }
+
+    public File getBundle() {
+        return bundle;
     }
 
     String getSymbolicName() {
