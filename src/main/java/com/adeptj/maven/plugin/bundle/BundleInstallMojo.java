@@ -56,7 +56,7 @@ class BundleInstallMojo extends AbstractBundleMojo {
         this.getLog().info("Installing " + info);
         URI uri = this.getFullUri(String.format(URL_BUNDLE_INSTALL, this.consoleUrl));
         HttpPost request = new HttpPost(uri);
-        request.setEntity(this.newBundleInstallMultipartEntity(info));
+        request.setEntity(this.getMultipartEntity(info));
         ClientResponse response = this.httpClient.execute(request, this.responseHandler);
         if (response.isOk()) {
             this.getLog().info("Bundle installed successfully, please check AdeptJ OSGi Web Console"
@@ -72,7 +72,7 @@ class BundleInstallMojo extends AbstractBundleMojo {
         this.getLog().error("Problem installing bundle, please check AdeptJ OSGi Web Console!!");
     }
 
-    private HttpEntity newBundleInstallMultipartEntity(BundleInfo info) {
+    private HttpEntity getMultipartEntity(BundleInfo info) {
         MultipartEntityBuilder multipartEntityBuilder = MultipartEntityBuilder.create()
                 .setCharset(UTF_8)
                 .addBinaryBody(PARAM_BUNDLE_FILE, info.getBundle())

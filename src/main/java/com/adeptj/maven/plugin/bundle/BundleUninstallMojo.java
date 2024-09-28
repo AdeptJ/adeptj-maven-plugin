@@ -59,15 +59,15 @@ class BundleUninstallMojo extends AbstractBundleMojo {
         if (response.isOk()) {
             this.getLog().info("Bundle uninstalled successfully, please check AdeptJ OSGi Web Console"
                     + " [" + this.consoleUrl + "/bundles" + "]");
-        } else {
-            if (this.failOnError) {
-                throw new MojoExecutionException(
-                        String.format("Couldn't uninstall bundle, reason: [%s], status: [%s]",
-                                response.getReasonPhrase(),
-                                response.getCode()));
-            }
-            this.getLog().error("Problem uninstalling bundle, please check AdeptJ OSGi Web Console!!");
+            return;
         }
+        if (this.failOnError) {
+            throw new MojoExecutionException(
+                    String.format("Couldn't uninstall bundle, reason: [%s], status: [%s]",
+                            response.getReasonPhrase(),
+                            response.getCode()));
+        }
+        this.getLog().error("Problem uninstalling bundle, please check AdeptJ OSGi Web Console!!");
     }
 
     @Override
