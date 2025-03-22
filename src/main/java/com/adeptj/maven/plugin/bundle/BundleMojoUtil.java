@@ -29,6 +29,9 @@ import org.apache.maven.plugin.logging.Log;
  */
 final class BundleMojoUtil {
 
+    private BundleMojoUtil() {
+    }
+
     static void doHandleException(Log log, Exception ex, String op, String consoleUrl) throws MojoExecutionException {
         log.error(ex);
         if (ex instanceof MojoExecutionException) {
@@ -36,8 +39,5 @@ final class BundleMojoUtil {
         }
         String message = String.format("Bundle %s operation on [%s] failed, cause: %s", op, consoleUrl, ex.getMessage());
         throw new MojoExecutionException(message, ex);
-    }
-
-    private BundleMojoUtil() {
     }
 }
