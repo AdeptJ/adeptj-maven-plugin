@@ -201,6 +201,9 @@
                 <version>${versions-maven-plugin.version}</version>
                 <configuration>
                     <generateBackupPoms>false</generateBackupPoms>
+                    <ignoredVersions>
+                        <ignoredVersion>.+(?-)(M|alpha|Alpha|beta|Beta|rc|CR|MR).+</ignoredVersion>
+                    </ignoredVersions>
                 </configuration>
             </plugin>
 
