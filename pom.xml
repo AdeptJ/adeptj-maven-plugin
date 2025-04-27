@@ -23,7 +23,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.adeptj</groupId>
     <artifactId>adeptj-maven-plugin</artifactId>
-    <version>1.8.1</version>
+    <version>1.8.2-SNAPSHOT</version>
     <packaging>maven-plugin</packaging>
     <name>AdeptJ :: Maven Plugin</name>
     <description>Maven Plugin for Supporting OSGi Bundle Development(make bundle install/uninstall easy)</description>
@@ -96,17 +96,6 @@
         <url>https://github.com/AdeptJ/adeptj-maven-plugin/issues</url>
         <system>GitHub Issues</system>
     </issueManagement>
-
-    <distributionManagement>
-        <snapshotRepository>
-            <id>ossrh-adeptj</id>
-            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-        </snapshotRepository>
-        <repository>
-            <id>ossrh-adeptj</id>
-            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-        </repository>
-    </distributionManagement>
 
     <scm>
         <url>https://github.com/AdeptJ/adeptj-maven-plugin</url>
