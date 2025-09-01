@@ -19,7 +19,7 @@
 */
 package com.adeptj.maven.plugin.bundle;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.classic.methods.HttpPost;
 import org.apache.hc.client5.http.cookie.BasicCookieStore;
@@ -144,7 +144,7 @@ abstract class AbstractBundleMojo extends AbstractMojo {
     }
 
     URI getFullUri(String url) {
-        if (!StringUtils.startsWith(url, "/")) {
+        if (!Strings.CS.startsWith(url, "/")) {
             url = "/" + url;
         }
         URI uri = URI.create(this.baseUrl + url);
@@ -153,7 +153,7 @@ abstract class AbstractBundleMojo extends AbstractMojo {
     }
 
     private void initServerHttpSession() throws IOException {
-        if (StringUtils.equalsIgnoreCase(this.serverAdapter, RT_ADAPTER_TOMCAT)) {
+        if (Strings.CI.equals(this.serverAdapter, RT_ADAPTER_TOMCAT)) {
             HttpGet request = new HttpGet(this.getFullUri(this.consoleUrl));
             ClientResponse response = this.httpClient.execute(request, this.responseHandler);
             if (response.isOk()) {
@@ -172,7 +172,7 @@ abstract class AbstractBundleMojo extends AbstractMojo {
         this.getLog().debug("Login status code: " + response.getCode());
         this.loginSucceeded = this.cookieStore.getCookies()
                 .stream()
-                .anyMatch(cookie -> StringUtils.startsWith(cookie.getName(), COOKIE_JSESSIONID));
+                .anyMatch(cookie -> Strings.CS.startsWith(cookie.getName(), COOKIE_JSESSIONID));
         return this.loginSucceeded;
     }
 
