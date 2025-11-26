@@ -33,7 +33,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <jdk.release.version>17</jdk.release.version>
-        <commons-lang.version>3.19.0</commons-lang.version>
+        <commons-lang.version>3.20.0</commons-lang.version>
         <httpcore5.version>5.3.6</httpcore5.version>
         <httpcore5-h2.version>5.3.6</httpcore5-h2.version>
         <httpclient5.version>5.5.1</httpclient5.version>
@@ -54,7 +54,7 @@
         <maven-install-plugin.version>3.1.4</maven-install-plugin.version>
         <maven-resources-plugin.version>3.3.1</maven-resources-plugin.version>
         <central-publishing-maven-plugin.version>0.9.0</central-publishing-maven-plugin.version>
-        <versions-maven-plugin.version>2.19.1</versions-maven-plugin.version>
+        <versions-maven-plugin.version>2.20.1</versions-maven-plugin.version>
         <junit-jupiter.version>6.0.1</junit-jupiter.version>
         <mockito.version>5.20.0</mockito.version>
     </properties>
