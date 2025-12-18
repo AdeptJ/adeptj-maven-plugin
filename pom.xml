@@ -34,8 +34,8 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <jdk.release.version>17</jdk.release.version>
         <commons-lang.version>3.20.0</commons-lang.version>
-        <httpcore5.version>5.3.6</httpcore5.version>
-        <httpcore5-h2.version>5.3.6</httpcore5-h2.version>
+        <httpcore5.version>5.4</httpcore5.version>
+        <httpcore5-h2.version>5.4</httpcore5-h2.version>
         <httpclient5.version>5.5.1</httpclient5.version>
         <slf4j.version>2.0.17</slf4j.version>
         <maven-compiler-plugin.version>3.14.1</maven-compiler-plugin.version>
