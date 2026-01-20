@@ -54,7 +54,7 @@
         <maven-install-plugin.version>3.1.4</maven-install-plugin.version>
         <maven-resources-plugin.version>3.4.0</maven-resources-plugin.version>
         <central-publishing-maven-plugin.version>0.9.0</central-publishing-maven-plugin.version>
-        <versions-maven-plugin.version>2.20.1</versions-maven-plugin.version>
+        <versions-maven-plugin.version>2.21.0</versions-maven-plugin.version>
         <junit-jupiter.version>6.0.2</junit-jupiter.version>
         <mockito.version>5.21.0</mockito.version>
     </properties>
