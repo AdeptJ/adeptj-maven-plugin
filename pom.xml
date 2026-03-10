@@ -34,13 +34,13 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <jdk.release.version>17</jdk.release.version>
         <commons-lang.version>3.20.0</commons-lang.version>
-        <httpcore5.version>5.4.1</httpcore5.version>
-        <httpcore5-h2.version>5.4.1</httpcore5-h2.version>
+        <httpcore5.version>5.4.2</httpcore5.version>
+        <httpcore5-h2.version>5.4.2</httpcore5-h2.version>
         <httpclient5.version>5.6</httpclient5.version>
         <slf4j.version>2.0.17</slf4j.version>
         <maven-compiler-plugin.version>3.15.0</maven-compiler-plugin.version>
         <maven-plugin-plugin.version>3.15.2</maven-plugin-plugin.version>
-        <maven-plugin-api.version>3.9.12</maven-plugin-api.version>
+        <maven-plugin-api.version>3.9.13</maven-plugin-api.version>
         <maven-plugin-annotations.version>3.15.2</maven-plugin-annotations.version>
         <maven-surefire-plugin.version>3.5.5</maven-surefire-plugin.version>
         <maven-failsafe-plugin.version>3.5.5</maven-failsafe-plugin.version>
@@ -52,11 +52,11 @@
         <maven-deploy-plugin.version>3.1.4</maven-deploy-plugin.version>
         <maven-clean-plugin.version>3.5.0</maven-clean-plugin.version>
         <maven-install-plugin.version>3.1.4</maven-install-plugin.version>
-        <maven-resources-plugin.version>3.4.0</maven-resources-plugin.version>
+        <maven-resources-plugin.version>3.5.0</maven-resources-plugin.version>
         <central-publishing-maven-plugin.version>0.10.0</central-publishing-maven-plugin.version>
         <versions-maven-plugin.version>2.21.0</versions-maven-plugin.version>
         <junit-jupiter.version>6.0.3</junit-jupiter.version>
-        <mockito.version>5.21.0</mockito.version>
+        <mockito.version>5.22.0</mockito.version>
     </properties>
 
     <!-- Project Information -->
@@ -178,7 +178,7 @@
                                     <version>[3.6.0,4.0.0]</version>
                                 </requireMavenVersion>
                                 <requireJavaVersion>
-                                    <version>[11,20)</version>
+                                    <version>[17,25)</version>
                                 </requireJavaVersion>
                             </rules>
                         </configuration>
