@@ -37,10 +37,10 @@
         <httpcore5.version>5.4.2</httpcore5.version>
         <httpcore5-h2.version>5.4.2</httpcore5-h2.version>
         <httpclient5.version>5.6.1</httpclient5.version>
-        <slf4j.version>2.0.17</slf4j.version>
+        <slf4j.version>2.0.18</slf4j.version>
         <maven-compiler-plugin.version>3.15.0</maven-compiler-plugin.version>
         <maven-plugin-plugin.version>3.15.2</maven-plugin-plugin.version>
-        <maven-plugin-api.version>3.9.15</maven-plugin-api.version>
+        <maven-plugin-api.version>3.9.16</maven-plugin-api.version>
         <maven-plugin-annotations.version>3.15.2</maven-plugin-annotations.version>
         <maven-surefire-plugin.version>3.5.5</maven-surefire-plugin.version>
         <maven-failsafe-plugin.version>3.5.5</maven-failsafe-plugin.version>
@@ -55,7 +55,7 @@
         <maven-resources-plugin.version>3.5.0</maven-resources-plugin.version>
         <central-publishing-maven-plugin.version>0.10.0</central-publishing-maven-plugin.version>
         <versions-maven-plugin.version>2.21.0</versions-maven-plugin.version>
-        <junit-jupiter.version>6.0.3</junit-jupiter.version>
+        <junit-jupiter.version>6.1.0</junit-jupiter.version>
         <mockito.version>5.23.0</mockito.version>
     </properties>
 
