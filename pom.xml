@@ -34,9 +34,9 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <jdk.release.version>21</jdk.release.version>
         <commons-lang.version>3.20.0</commons-lang.version>
-        <httpcore5.version>5.4.2</httpcore5.version>
-        <httpcore5-h2.version>5.4.2</httpcore5-h2.version>
-        <httpclient5.version>5.6.1</httpclient5.version>
+        <httpcore5.version>5.4.3</httpcore5.version>
+        <httpcore5-h2.version>5.4.3</httpcore5-h2.version>
+        <httpclient5.version>5.6.2</httpclient5.version>
         <slf4j.version>2.0.18</slf4j.version>
         <maven-compiler-plugin.version>3.15.0</maven-compiler-plugin.version>
         <maven-plugin-plugin.version>3.15.2</maven-plugin-plugin.version>
@@ -55,7 +55,7 @@
         <maven-resources-plugin.version>3.5.0</maven-resources-plugin.version>
         <central-publishing-maven-plugin.version>0.11.0</central-publishing-maven-plugin.version>
         <versions-maven-plugin.version>2.21.0</versions-maven-plugin.version>
-        <junit-jupiter.version>6.1.0</junit-jupiter.version>
+        <junit-jupiter.version>6.1.1</junit-jupiter.version>
         <mockito.version>5.23.0</mockito.version>
     </properties>
 
