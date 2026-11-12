@@ -33,7 +33,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <jdk.release.version>21</jdk.release.version>
-        <commons-lang.version>3.21.0</commons-lang.version>
+        <commons-lang.version>3.22.0</commons-lang.version>
         <httpcore5.version>5.4.4</httpcore5.version>
         <httpcore5-h2.version>5.4.4</httpcore5-h2.version>
         <httpclient5.version>5.6.5</httpclient5.version>
